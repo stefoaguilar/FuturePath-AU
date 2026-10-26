@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1-draft",
+  "note": "TEMPLATE ONLY. Copy one object from 'opportunities' per record. Delete this note in real data files. Draft by Samer (SAM-01) for review with Stefano (importer) and Hakm (display).",
+  "opportunities": [
+    {
+      "id": "OPP-000",
+      "record_type": "real",
+      "title": "Name of the opportunity as published",
+      "provider": "Organisation offering it",
+      "category": "scholarship",
+      "location": "National",
+      "study_level": "undergraduate",
+      "summary": "One or two plain-language sentences describing what it is.",
+      "skills": ["example skill"],
+      "source_url": "https://official-page.example.gov.au/",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-000-E1",
+          "type": "education",
+          "text": "Plain-language condition the user can read.",
+          "evidence_summary": "Paraphrase of what the official page says (do not copy long text).",
+          "source_url": "https://official-page.example.gov.au/",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2026-12-31",
+        "note": "Optional note, e.g. 'applications close 11:59pm AEDT'."
+      },
+      "verification": {
+        "verified_on": "2026-10-26",
+        "status": "needs_recheck",
+        "method": "Read official page on the verified_on date. Change status to verified only after a person compares each condition with the page."
+      },
+      "data_notes": "Anything unclear, conflicting or unknown. Leave empty string if none."
+    }
+  ]
+}
