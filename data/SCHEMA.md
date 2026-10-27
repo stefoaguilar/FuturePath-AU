@@ -1,68 +1,74 @@
-# Opportunity record schema (draft v0.1)
+# Opportunity record format (draft v0.1)
 
-Owner: Samer (SAM-01). Needs sign-off from Stefano (importer, STE-01) and Hakm (display, HAK-03) before the dataset grows.
+Owner: Samer (SAM-01). Stefano (importer) and Hakm (display) need to agree to it before the dataset grows.
 
-File format: JSON. One file holds a list of records under `opportunities`. See `opportunities.template.json`.
+The data is a JSON file. One file holds a list of records under `opportunities`. There is an example in `opportunities.template.json`.
 
-## Fields
+## Fields in a record
 
-| Field | Required | Allowed values / format | Notes |
+| Field | Required | What goes in it | Notes |
 |---|---|---|---|
-| `id` | yes | `OPP-001`, `OPP-002`, ... | Unique. Never reused. |
-| `record_type` | yes | `real` or `synthetic` | Synthetic records must also say so in `title` (e.g. "[SYNTHETIC] ..."). |
-| `title` | yes | text | As published by the provider. |
-| `provider` | yes | text | Organisation offering it. |
-| `category` | yes | `scholarship`, `internship`, `cadetship`, `graduate_program`, `traineeship`, `course`, `certification`, `mentoring`, `other` | |
-| `location` | yes | text | e.g. `National`, `Adelaide SA`, `Remote`, or `unknown`. |
-| `study_level` | yes | `undergraduate`, `postgraduate`, `vocational`, `school_leaver`, `graduate`, `any`, `unknown` | |
-| `summary` | yes | 1-2 plain sentences | Written in our own words. |
-| `skills` | no | list of text | Skills or knowledge areas the opportunity relates to. |
-| `source_url` | yes | official URL | Prefer the provider's own page. |
-| `eligibility_conditions` | yes | list (see below) | At least one, or one `unknown` entry if none are published. |
+| `id` | yes | `OPP-001`, `OPP-002`, and so on | Must be unique. Never reuse an id. |
+| `record_type` | yes | `real` or `synthetic` | A synthetic record must also say so in its `title`, for example "[SYNTHETIC] ...". |
+| `title` | yes | text | The name the provider uses. |
+| `provider` | yes | text | The organisation offering it. |
+| `category` | yes | `scholarship`, `internship`, `cadetship`, `graduate_program`, `traineeship`, `course`, `certification`, `mentoring` or `other` | |
+| `location` | yes | text | For example `National`, `Adelaide SA`, `Remote`, or `unknown`. |
+| `study_level` | yes | `undergraduate`, `postgraduate`, `vocational`, `school_leaver`, `graduate`, `any` or `unknown` | |
+| `summary` | yes | one or two plain sentences | Written in our own words. |
+| `skills` | no | list of text | Skills or subjects the opportunity relates to. Empty means the page does not say. |
+| `source_url` | yes | web address | Use the provider's own page when possible. |
+| `eligibility_conditions` | yes | list (see below) | At least one. If the page lists none, add one condition of type `unknown`. |
 | `deadline` | yes | object (see below) | |
 | `verification` | yes | object (see below) | |
-| `data_notes` | no | text | Conflicts, gaps, anything a reviewer should know. |
+| `data_notes` | no | text | Anything a reviewer should know, such as conflicts or gaps. |
 
-### eligibility_conditions (one object per condition)
+## Eligibility conditions
+
+Each condition is one object in the `eligibility_conditions` list.
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | yes | `<record id>-E1`, `-E2`, ... |
-| `type` | yes | `education`, `enrolment`, `field_of_study`, `citizenship_residency`, `identity_requirement`, `skill`, `experience`, `age`, `location`, `other`, `unknown` |
-| `text` | yes | Plain-language condition shown to the user. |
-| `evidence_summary` | yes | Paraphrase of what the official page says. Short; do not copy long text. |
-| `source_url` | yes | Page where the condition is published. |
-| `checkable_from_profile` | yes | `true` if a profile field can answer it, `false` if a person must judge it. |
+| `id` | yes | The record id plus `-E1`, `-E2`, and so on. |
+| `type` | yes | `education`, `enrolment`, `field_of_study`, `citizenship_residency`, `identity_requirement`, `skill`, `experience`, `age`, `location`, `other` or `unknown` |
+| `text` | yes | The condition in plain language, as the student will read it. |
+| `evidence_summary` | yes | A short summary of what the official page says. Do not copy long text. |
+| `source_url` | yes | The page where the condition is published. |
+| `checkable_from_profile` | yes | `true` if a profile field can answer it. `false` if a person has to decide. |
 
-### deadline
+## Deadline
 
 | `status` | `date` | Meaning |
 |---|---|---|
-| `date` | `YYYY-MM-DD` | A published closing date. |
-| `rolling` | `null` | Open all year / no fixed date. |
-| `closed` | optional date | Round is closed; next round not announced. |
-| `unknown` | `null` | The page does not state a date. **Never guess.** |
+| `date` | `YYYY-MM-DD` | The page gives a closing date. |
+| `rolling` | `null` | Open all year, with no fixed date. |
+| `closed` | optional date | The round is closed. The next round is not announced. |
+| `unknown` | `null` | The page gives no date. **Never guess.** |
 
-The `deadline` object may also hold an optional `note` (text), for example "applications close 11:59pm AEDT" or what the page says about the next round.
+A deadline can also have a `note`, for example "applications close 11:59pm AEDT", or what the page says about the next round.
 
-### verification
+A closed round can keep its old date, so the app can show it.
+
+## Verification
 
 | Field | Notes |
 |---|---|
-| `verified_on` | `YYYY-MM-DD` date the record was last checked. For records imported from a team CSV this is the CSV's date, and `method` must say it was imported and not checked against the official page. |
-| `status` | `verified`, `needs_recheck`, `conflicting`, `synthetic` |
-| `method` | Short text, e.g. "Read official page". |
+| `verified_on` | The date (`YYYY-MM-DD`) someone last checked the record against the official page. For a record that was only imported from a team CSV, it is the CSV's date. In that case `method` must say it was imported and not checked. |
+| `status` | `verified`, `needs_recheck`, `conflicting` or `synthetic` |
+| `method` | A short sentence saying how it was checked, for example "The official page was saved as a PDF and compared with the record." |
 
-## Rules for the data (agreed principles from the project guide)
+## Rules for the data
 
-1. Missing information is recorded as `unknown`, never guessed and never treated as ineligible.
-2. `identity_requirement` conditions (for programs that publish an Aboriginal and/or Torres Strait Islander requirement) are never inferred by the system. They are marked `checkable_from_profile: false` and handled as user-confirmed or uncertain.
-3. No suitability scoring from identity. Conditions only describe what the provider publishes.
-4. Real records need an official `source_url` and a `verified_on` date. Anything else is `synthetic` and labelled.
+These come from the project guide.
+
+1. If something is missing, write `unknown`. Never guess, and never treat it as "not eligible".
+2. The system never works out an `identity_requirement` condition (for example, a program for Aboriginal and/or Torres Strait Islander people). These are always `checkable_from_profile: false`. The student confirms them, or the result stays uncertain.
+3. No suitability score based on identity. Conditions only describe what the provider published.
+4. A real record needs an official `source_url` and a `verified_on` date. Anything else must be `synthetic` and labelled.
 5. No personal data about real people anywhere in `data/`.
 
-## Open questions for Stefano / Hakm
+## Questions that were open
 
-- Stefano: is nested JSON OK for the importer, or do you want flat CSV (one row per condition)?
-- Hakm: do the cards need any extra fields (e.g. logo, short tag list)?
-- All: should `deadline.date` for closed rounds be kept for display?
+- Stefano: is nested JSON OK for the importer? **Answered: yes, no need to convert it to CSV.**
+- Hakm: do the cards need any extra fields, such as a logo or a short tag list? **Still waiting for an answer.**
+- Everyone: should the date of a closed round be kept for display? **Yes. The validator allows it.**

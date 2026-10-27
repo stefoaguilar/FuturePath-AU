@@ -1,24 +1,26 @@
 {
   "schema_version": "0.1-draft",
-  "note": "TEMPLATE ONLY. Copy one object from 'opportunities' per record. Delete this note in real data files. Draft by Samer (SAM-01) for review with Stefano (importer) and Hakm (display).",
+  "note": "This is an example only. Copy one record from 'opportunities' for each new record. Delete this note in the real data file. Drafted by Samer (SAM-01) for Stefano (importer) and Hakm (display) to review.",
   "opportunities": [
     {
       "id": "OPP-000",
       "record_type": "real",
-      "title": "Name of the opportunity as published",
-      "provider": "Organisation offering it",
+      "title": "The name of the opportunity, as the provider writes it",
+      "provider": "The organisation offering it",
       "category": "scholarship",
       "location": "National",
       "study_level": "undergraduate",
-      "summary": "One or two plain-language sentences describing what it is.",
-      "skills": ["example skill"],
+      "summary": "One or two plain sentences saying what it is.",
+      "skills": [
+        "example skill"
+      ],
       "source_url": "https://official-page.example.gov.au/",
       "eligibility_conditions": [
         {
           "id": "OPP-000-E1",
           "type": "education",
-          "text": "Plain-language condition the user can read.",
-          "evidence_summary": "Paraphrase of what the official page says (do not copy long text).",
+          "text": "The condition in plain language, as the student will read it.",
+          "evidence_summary": "A short summary of what the official page says. Do not copy long text.",
           "source_url": "https://official-page.example.gov.au/",
           "checkable_from_profile": true
         }
@@ -26,14 +28,14 @@
       "deadline": {
         "status": "date",
         "date": "2026-12-31",
-        "note": "Optional note, e.g. 'applications close 11:59pm AEDT'."
+        "note": "Optional. For example: applications close 11:59pm AEDT."
       },
       "verification": {
         "verified_on": "2026-10-26",
         "status": "needs_recheck",
-        "method": "Read official page on the verified_on date. Change status to verified only after a person compares each condition with the page."
+        "method": "How it was checked. Only change the status to verified after a person has compared each condition with the page."
       },
-      "data_notes": "Anything unclear, conflicting or unknown. Leave empty string if none."
+      "data_notes": "Anything unclear or conflicting. Leave this empty if there is nothing."
     }
   ]
 }
