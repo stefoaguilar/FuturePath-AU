@@ -47,7 +47,26 @@ Each condition is one object in the `eligibility_conditions` list.
 
 A deadline can also have a `note`, for example "applications close 11:59pm AEDT", or what the page says about the next round.
 
-A closed round can keep its old date, so the app can show it.
+### Closed rounds
+
+Use `closed` only when the official page itself says the round is closed. Do not use it because a date has passed (use `date` for that).
+
+1. A `closed` record must have a `note` that says what the page says, including what it says about the next round.
+2. `date` on a closed record is optional. If it is there, it is the last closing date, it must be a real date, and it must not be in the future.
+3. Never invent the date of the next round. If the page does not give one, the record has no next date.
+4. The app shows the record as closed, keeps it out of the "apply now" list, keeps the eligibility conditions visible, and can offer "watch for the next round" with no date.
+
+### How the app works out the deadline state
+
+The app works this out from the reference date (28 November 2026 for the demo). It never reads the real clock for this.
+
+| Record | State shown |
+|---|---|
+| `date`, on or after the reference date | future (closing soon if within a few days) |
+| `date`, before the reference date | past |
+| `closed` (with or without a date) | past, shown as closed |
+| `rolling` | open all year |
+| `unknown` | unknown, no date shown |
 
 ## Verification
 
@@ -56,6 +75,10 @@ A closed round can keep its old date, so the app can show it.
 | `verified_on` | The date (`YYYY-MM-DD`) someone last checked the record against the official page. For a record that was only imported from a team CSV, it is the CSV's date. In that case `method` must say it was imported and not checked. |
 | `status` | `verified`, `needs_recheck`, `conflicting` or `synthetic` |
 | `method` | A short sentence saying how it was checked, for example "The official page was saved as a PDF and compared with the record." |
+
+## What the validator checks
+
+`scripts/validate_dataset.py` checks that every required field is there and has the right type (text, list, true/false, date), that words come from the allowed lists, that deadlines follow the rules above, and that the test scenarios use the profile field names from `PROFILE_MAPPING.md`.
 
 ## Rules for the data
 
@@ -71,4 +94,5 @@ These come from the project guide.
 
 - Stefano: is nested JSON OK for the importer? **Answered: yes, no need to convert it to CSV.**
 - Hakm: do the cards need any extra fields, such as a logo or a short tag list? **Still waiting for an answer.**
-- Everyone: should the date of a closed round be kept for display? **Yes. The validator allows it.**
+- Everyone: should the date of a closed round be kept for display? **Yes. The validator allows it, and checks that it is a real date that is not in the future.**
+- Stefano and Hakm: the table above gives `rolling` its own state, "open all year". Is that OK, or do you want rolling shown as "unknown"? **Still waiting for an answer.**

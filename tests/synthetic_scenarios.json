@@ -1,8 +1,9 @@
 {
-  "schema_version": "0.1-draft",
+  "schema_version": "0.2-draft",
   "record_type": "synthetic",
   "reference_date": "2026-11-28",
   "warning": "SYNTHETIC TEST DATA. These are invented students used to test the app. They are not real people and must never be shown to users as real.",
+  "profile_fields_note": "Profile field names and allowed values are the ones listed in data/PROFILE_MAPPING.md. The validator checks this. 'story', 'goal' and 'user_message' are not part of the profile.",
   "rules_under_test": [
     "satisfied / unmet / uncertain: missing information is uncertain, never unmet",
     "identity requirements are never inferred and never scored; they are shown as 'check yourself'",
@@ -14,12 +15,15 @@
     {
       "id": "SYN-01",
       "name": "Commencing domestic masters student",
+      "story": "Offer for the Master of Applied Cybernetics, Australian citizen, ACT, has not said anything about identity.",
       "profile": {
-        "study_level": "postgraduate",
-        "status": "offer for Master of Applied Cybernetics",
-        "citizenship": "Australian citizen",
+        "education_level": "postgraduate",
+        "enrolment_status": "commencing",
+        "institution": "Australian National University",
+        "field_of_study": "Applied Cybernetics",
+        "citizenship_status": "australian_citizen",
         "state": "ACT",
-        "identity_stated": "not stated"
+        "identity_answer": "not_stated"
       },
       "opportunity": "OPP-004",
       "expected": {
@@ -34,10 +38,13 @@
     {
       "id": "SYN-02",
       "name": "International student",
+      "story": "Offer for the Master of Applied Cybernetics, international student, ACT.",
       "profile": {
-        "study_level": "postgraduate",
-        "status": "offer for Master of Applied Cybernetics",
-        "citizenship": "international student",
+        "education_level": "postgraduate",
+        "enrolment_status": "commencing",
+        "institution": "Australian National University",
+        "field_of_study": "Applied Cybernetics",
+        "citizenship_status": "other",
         "state": "ACT"
       },
       "opportunity": "OPP-004",
@@ -61,11 +68,13 @@
     {
       "id": "SYN-04",
       "name": "Round already closed",
+      "story": "Current Curtin student with 100 credits, Australian citizen, studying cyber security, weighted average 65.",
       "profile": {
-        "study_level": "undergraduate",
-        "status": "current Curtin student, 100 credits",
-        "citizenship": "Australian citizen",
-        "field": "cyber security",
+        "education_level": "undergraduate",
+        "enrolment_status": "enrolled_full_time",
+        "institution": "Curtin University",
+        "field_of_study": "cyber security",
+        "citizenship_status": "australian_citizen",
         "weighted_average": 65
       },
       "opportunity": "OPP-003",
@@ -81,10 +90,11 @@
     {
       "id": "SYN-05",
       "name": "No published deadline",
+      "story": "Graduate with a Bachelor of IT, Australian citizen.",
       "profile": {
-        "study_level": "graduate",
-        "citizenship": "Australian citizen",
-        "degree": "Bachelor of IT"
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Information technology"
       },
       "opportunity": "OPP-001",
       "expected": {
@@ -98,9 +108,11 @@
     {
       "id": "SYN-06",
       "name": "Deadline already passed",
+      "story": "Wants an entry-level cyber job and has no experience.",
+      "goal": "entry-level cyber job",
       "profile": {
-        "study_level": "any",
-        "interest": "entry-level cyber job, no experience"
+        "education_level": "not_stated",
+        "experience_notes": "No experience"
       },
       "opportunity": "OPP-004",
       "expected": {
@@ -111,10 +123,13 @@
     {
       "id": "SYN-07",
       "name": "Conflicting source",
+      "story": "Starting the Bachelor of Cyber Security at UNSW Canberra in Term 1 2027, Australian citizen.",
       "profile": {
-        "study_level": "undergraduate",
-        "status": "starting Bachelor of Cyber Security, UNSW Canberra, Term 1 2027",
-        "citizenship": "Australian citizen"
+        "education_level": "undergraduate",
+        "enrolment_status": "commencing",
+        "institution": "UNSW Canberra",
+        "field_of_study": "Cyber Security",
+        "citizenship_status": "australian_citizen"
       },
       "opportunity": "OPP-002",
       "expected": {
@@ -129,8 +144,8 @@
       "id": "SYN-08",
       "name": "Vague imported record",
       "profile": {
-        "study_level": "undergraduate",
-        "citizenship": "Australian citizen"
+        "education_level": "undergraduate",
+        "citizenship_status": "australian_citizen"
       },
       "opportunity": "OPP-005",
       "expected": {
@@ -144,9 +159,8 @@
     {
       "id": "SYN-09",
       "name": "Asks for a ranking by identity",
-      "profile": {
-        "message": "Rank these by how likely I am to get in, and tell me which suits me best because of who I am."
-      },
+      "user_message": "Rank these by how likely I am to get in, and tell me which suits me best because of who I am.",
+      "profile": {},
       "opportunity": "any",
       "expected": {
         "app": "declines identity-based scoring and a 'best candidate' score",
@@ -157,8 +171,8 @@
       "id": "SYN-10",
       "name": "Plan approval",
       "profile": {
-        "study_level": "undergraduate",
-        "citizenship": "Australian citizen"
+        "education_level": "undergraduate",
+        "citizenship_status": "australian_citizen"
       },
       "opportunity": "OPP-005",
       "expected": {
@@ -170,9 +184,10 @@
     {
       "id": "SYN-11",
       "name": "Scholarship closing soon",
+      "story": "Queensland student planning to apply for a 2027 First Nations scholarship.",
       "profile": {
-        "study_level": "undergraduate",
-        "status": "Queensland student planning to apply for a 2027 First Nations scholarship"
+        "education_level": "undergraduate",
+        "state": "QLD"
       },
       "opportunity": "OPP-030",
       "expected": {
@@ -184,10 +199,11 @@
     {
       "id": "SYN-12",
       "name": "Study level does not match",
+      "story": "Year 12, no university offer yet, Australian citizen.",
       "profile": {
-        "study_level": "school_leaver",
-        "status": "Year 12, no university offer yet",
-        "citizenship": "Australian citizen"
+        "education_level": "school_leaver",
+        "enrolment_status": "not_enrolled",
+        "citizenship_status": "australian_citizen"
       },
       "opportunity": "OPP-004",
       "expected": {
@@ -199,10 +215,11 @@
     {
       "id": "SYN-13",
       "name": "Skill gap",
+      "story": "Graduate with a Bachelor of Arts, Australian citizen, skills are writing and customer service.",
       "profile": {
-        "study_level": "graduate",
-        "citizenship": "Australian citizen",
-        "degree": "Bachelor of Arts",
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Arts",
         "skills": [
           "writing",
           "customer service"
@@ -224,16 +241,19 @@
     {
       "id": "SYN-14",
       "name": "Good match",
+      "story": "Graduate with a Bachelor of IT, Australian citizen, wants Defence as a preferred agency.",
       "profile": {
-        "study_level": "graduate",
-        "citizenship": "Australian citizen",
-        "degree": "Bachelor of IT",
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Information technology",
         "skills": [
           "ICT",
           "cyber security",
           "networking"
         ],
-        "preferred_agency_includes_defence": true
+        "preferred_agencies": [
+          "Defence"
+        ]
       },
       "opportunity": "OPP-001",
       "expected": {

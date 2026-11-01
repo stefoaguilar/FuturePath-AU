@@ -20,7 +20,7 @@ Run them from this folder.
 
 | Command | What it does |
 |---|---|
-| `python scripts/validate_dataset.py` | Checks the data file against the rules. Run this after every change. |
+| `python scripts/validate_dataset.py` | Checks the data file and the test scenarios against the rules (required fields, types, deadlines, profile field names). Run this after every change. |
 | `python scripts/freshness_check.py --today 2026-11-28` | Lists records with a passed deadline, no deadline, or an old check. It saves a report in `reports/`. |
 | `python scripts/build_dataset.py` | Built the data file from the CSVs. **Do not run it again.** It would overwrite the hand-checked records. |
 
