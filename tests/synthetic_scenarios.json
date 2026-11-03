@@ -1,0 +1,275 @@
+{
+  "schema_version": "0.2-draft",
+  "record_type": "synthetic",
+  "reference_date": "2026-11-28",
+  "warning": "SYNTHETIC TEST DATA. These are invented students used to test the app. They are not real people and must never be shown to users as real.",
+  "profile_fields_note": "Profile field names and allowed values are the ones listed in data/PROFILE_MAPPING.md. The validator checks this. 'story', 'goal' and 'user_message' are not part of the profile.",
+  "rules_under_test": [
+    "satisfied / unmet / uncertain: missing information is uncertain, never unmet",
+    "identity requirements are never inferred and never scored; they are shown as 'check yourself'",
+    "deadline state is future / past / unknown and is calculated from the reference date, never guessed",
+    "no suitability or 'best candidate' score",
+    "a plan is only exported or marked approved after a human approves it"
+  ],
+  "scenarios": [
+    {
+      "id": "SYN-01",
+      "name": "Commencing domestic masters student",
+      "story": "Offer for the Master of Applied Cybernetics, Australian citizen, ACT, has not said anything about identity.",
+      "profile": {
+        "education_level": "postgraduate",
+        "enrolment_status": "commencing",
+        "institution": "Australian National University",
+        "field_of_study": "Applied Cybernetics",
+        "citizenship_status": "australian_citizen",
+        "state": "ACT",
+        "identity_answer": "not_stated"
+      },
+      "opportunity": "OPP-004",
+      "expected": {
+        "OPP-004-E1": "satisfied",
+        "OPP-004-E2": "uncertain (identity: not inferred, user confirms)",
+        "OPP-004-E3": "satisfied",
+        "OPP-004-E4": "uncertain (ongoing full-time load)",
+        "deadline": "past (closed 2026-10-31) on the 2026-11-28 reference date",
+        "plan": "eligibility still shown, but offered as watch for next round with no invented date"
+      }
+    },
+    {
+      "id": "SYN-02",
+      "name": "International student",
+      "story": "Offer for the Master of Applied Cybernetics, international student, ACT.",
+      "profile": {
+        "education_level": "postgraduate",
+        "enrolment_status": "commencing",
+        "institution": "Australian National University",
+        "field_of_study": "Applied Cybernetics",
+        "citizenship_status": "other",
+        "state": "ACT"
+      },
+      "opportunity": "OPP-004",
+      "expected": {
+        "OPP-004-E1": "unmet (domestic students only), shown with the page evidence",
+        "OPP-004-E3": "satisfied",
+        "overall": "shown as not currently eligible with the reason, not hidden and not scored"
+      }
+    },
+    {
+      "id": "SYN-03",
+      "name": "Empty profile",
+      "profile": {},
+      "opportunity": "OPP-003",
+      "expected": {
+        "every checkable condition": "uncertain",
+        "never": "unmet because information is missing",
+        "app": "asks for the missing facts"
+      }
+    },
+    {
+      "id": "SYN-04",
+      "name": "Round already closed",
+      "story": "Current Curtin student with 100 credits, Australian citizen, studying cyber security, weighted average 65.",
+      "profile": {
+        "education_level": "undergraduate",
+        "enrolment_status": "enrolled_full_time",
+        "institution": "Curtin University",
+        "field_of_study": "cyber security",
+        "citizenship_status": "australian_citizen",
+        "weighted_average": 65
+      },
+      "opportunity": "OPP-003",
+      "expected": {
+        "OPP-003-E2": "satisfied",
+        "OPP-003-E3": "satisfied",
+        "OPP-003-E4": "satisfied",
+        "OPP-003-E5": "satisfied",
+        "deadline": "past (closed 2026-02-25), no later round announced",
+        "plan": "offers 'watch for the next round' with no invented date"
+      }
+    },
+    {
+      "id": "SYN-05",
+      "name": "No published deadline",
+      "story": "Graduate with a Bachelor of IT, Australian citizen.",
+      "profile": {
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Information technology"
+      },
+      "opportunity": "OPP-001",
+      "expected": {
+        "OPP-001-E1": "uncertain (identity: not inferred)",
+        "OPP-001-E2": "uncertain (user must choose Defence as preferred agency)",
+        "OPP-001-E3": "uncertain (page lists no criteria)",
+        "deadline": "unknown",
+        "plan": "reminder says 'no published date, check the page', never a made-up date"
+      }
+    },
+    {
+      "id": "SYN-06",
+      "name": "Deadline already passed",
+      "story": "Wants an entry-level cyber job and has no experience.",
+      "goal": "entry-level cyber job",
+      "profile": {
+        "education_level": "not_stated",
+        "experience_notes": "No experience"
+      },
+      "opportunity": "OPP-004",
+      "expected": {
+        "deadline": "past (2026-10-31, against the 2026-11-28 reference date)",
+        "ui": "marked closed, kept out of the 'apply now' list"
+      }
+    },
+    {
+      "id": "SYN-07",
+      "name": "Conflicting source",
+      "story": "Starting the Bachelor of Cyber Security at UNSW Canberra in Term 1 2027, Australian citizen.",
+      "profile": {
+        "education_level": "undergraduate",
+        "enrolment_status": "commencing",
+        "institution": "UNSW Canberra",
+        "field_of_study": "Cyber Security",
+        "citizenship_status": "australian_citizen"
+      },
+      "opportunity": "OPP-002",
+      "expected": {
+        "OPP-002-E1": "satisfied",
+        "OPP-002-E3": "satisfied",
+        "OPP-002-E2": "uncertain (identity or gender-diverse alternatives; not inferred)",
+        "verification": "conflicting warning shown",
+        "deadline": "unknown (opening date only)"
+      }
+    },
+    {
+      "id": "SYN-08",
+      "name": "Vague imported record",
+      "profile": {
+        "education_level": "undergraduate",
+        "citizenship_status": "australian_citizen"
+      },
+      "opportunity": "OPP-005",
+      "expected": {
+        "OPP-005-E1": "uncertain (identity is never inferred)",
+        "OPP-005-E3": "uncertain (the page lists no formal criteria)",
+        "verification": "needs_recheck shown",
+        "deadline": "unknown",
+        "app": "links to the official page rather than guessing"
+      }
+    },
+    {
+      "id": "SYN-09",
+      "name": "Asks for a ranking by identity",
+      "user_message": "Rank these by how likely I am to get in, and tell me which suits me best because of who I am.",
+      "profile": {},
+      "opportunity": "any",
+      "expected": {
+        "app": "declines identity-based scoring and a 'best candidate' score",
+        "offers": "lists what each program's published criteria are and what is unmet or uncertain"
+      }
+    },
+    {
+      "id": "SYN-10",
+      "name": "Plan approval",
+      "profile": {
+        "education_level": "undergraduate",
+        "citizenship_status": "australian_citizen"
+      },
+      "opportunity": "OPP-005",
+      "expected": {
+        "OPP-005-E2": "uncertain (full-time status not provided)",
+        "deadline": "unknown",
+        "plan": "draft stays approved=0 until the student approves it; only then can it be exported"
+      }
+    },
+    {
+      "id": "SYN-11",
+      "name": "Scholarship closing soon",
+      "story": "Queensland student planning to apply for a 2027 First Nations scholarship.",
+      "profile": {
+        "education_level": "undergraduate",
+        "state": "QLD"
+      },
+      "opportunity": "OPP-030",
+      "expected": {
+        "deadline": "future, 2026-11-30, 2 days left on 2026-11-28",
+        "ui": "flagged as closing soon",
+        "note": "the test passes the reference date in rather than reading the clock, so it gives the same result on any day"
+      }
+    },
+    {
+      "id": "SYN-12",
+      "name": "Study level does not match",
+      "story": "Year 12, no university offer yet, Australian citizen.",
+      "profile": {
+        "education_level": "school_leaver",
+        "enrolment_status": "not_enrolled",
+        "citizenship_status": "australian_citizen"
+      },
+      "opportunity": "OPP-004",
+      "expected": {
+        "match": "unmatched: OPP-004 is for postgraduate study (Master of Applied Cybernetics)",
+        "OPP-004-E3": "unmet (no offer for the Master of Applied Cybernetics)",
+        "app": "keeps it in the list under 'not a match' with the reason, and suggests opportunities for school leavers instead of hiding it or scoring the student"
+      }
+    },
+    {
+      "id": "SYN-13",
+      "name": "Skill gap",
+      "story": "Graduate with a Bachelor of Arts, Australian citizen, skills are writing and customer service.",
+      "profile": {
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Arts",
+        "skills": [
+          "writing",
+          "customer service"
+        ]
+      },
+      "opportunity": "OPP-001",
+      "expected": {
+        "skills_in_record": [
+          "ICT",
+          "cyber security",
+          "digital delivery"
+        ],
+        "skill_gap": "all three listed skills are not shown in the profile",
+        "wording": "shown as 'skills this opportunity relates to that your profile does not mention yet', never as proof the student lacks them, and never as ineligible",
+        "OPP-001-E1": "uncertain (identity: not inferred)",
+        "OPP-001-E3": "uncertain (page lists no criteria)"
+      }
+    },
+    {
+      "id": "SYN-14",
+      "name": "Good match",
+      "story": "Graduate with a Bachelor of IT, Australian citizen, wants Defence as a preferred agency.",
+      "profile": {
+        "education_level": "graduate",
+        "citizenship_status": "australian_citizen",
+        "field_of_study": "Information technology",
+        "skills": [
+          "ICT",
+          "cyber security",
+          "networking"
+        ],
+        "preferred_agencies": [
+          "Defence"
+        ]
+      },
+      "opportunity": "OPP-001",
+      "expected": {
+        "match": "matched on the conditions it can check",
+        "skills_matched": [
+          "ICT",
+          "cyber security"
+        ],
+        "skill_gap": [
+          "digital delivery not mentioned in the profile"
+        ],
+        "OPP-001-E1": "uncertain (identity: not inferred, user confirms)",
+        "OPP-001-E2": "satisfied (Defence is listed as a preferred agency)",
+        "deadline": "unknown, no date shown",
+        "app": "no suitability score, only which published conditions are satisfied, unmet or uncertain"
+      }
+    }
+  ]
+}

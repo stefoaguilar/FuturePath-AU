@@ -1,0 +1,1469 @@
+{
+  "schema_version": "0.1-draft",
+  "dataset_note": "Real records only. OPP-001 to OPP-005 were first read from official pages on 2026-10-26. Records with verification status verified were compared with the saved official page on 2026-10-27. Records marked needs_recheck were imported from the team CSVs and have not been compared with the page yet.",
+  "opportunities": [
+    {
+      "id": "OPP-001",
+      "record_type": "real",
+      "title": "Australian Government Graduate Program - Indigenous Graduate Pathway (Defence as preferred agency)",
+      "provider": "Department of Defence (participating agency)",
+      "category": "graduate_program",
+      "location": "unknown",
+      "study_level": "graduate",
+      "summary": "A pathway for First Nations graduates into the public service. Applicants who name Defence as a preferred agency can be placed in one of Defence's graduate pathways, which include ICT and cyber security roles. Graduates can also apply directly to any of Defence's 10 graduate pathways.",
+      "skills": [
+        "ICT",
+        "cyber security",
+        "digital delivery"
+      ],
+      "source_url": "https://www.defence.gov.au/jobs-careers/graduate-program/first-nations-graduates",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-001-E1",
+          "type": "identity_requirement",
+          "text": "You must be a First Nations graduate.",
+          "evidence_summary": "The Defence page says the pathway is for First Nations graduates.",
+          "source_url": "https://www.defence.gov.au/jobs-careers/graduate-program/first-nations-graduates",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-001-E2",
+          "type": "other",
+          "text": "To be considered for Defence, you need to list Defence as a preferred agency.",
+          "evidence_summary": "The page says Defence placement requires Defence to be a preferred agency.",
+          "source_url": "https://www.defence.gov.au/jobs-careers/graduate-program/first-nations-graduates",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-001-E3",
+          "type": "unknown",
+          "text": "Placement depends on your qualifications and area of expertise. The page does not give degree, citizenship or graduation-date rules.",
+          "evidence_summary": "The page says placement is based on qualifications and expertise and is not guaranteed; no further conditions are listed.",
+          "source_url": "https://www.defence.gov.au/jobs-careers/graduate-program/first-nations-graduates",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "No opening or closing dates and no intake year on this page."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "The page does not say who administers the program or give dates. Find the program's own official page before relying on this record. Search results showed more than one defence.gov.au address for this pathway, so confirm which one is current. 2026-10-27: conditions match the page. The page gives no dates, no intake year and no degree or citizenship rules, so the deadline stays unknown."
+    },
+    {
+      "id": "OPP-002",
+      "record_type": "real",
+      "title": "UNSW Cyber Security Scholarship (UGCA1902)",
+      "provider": "UNSW (Bachelor of Cyber Security, UNSW Canberra City Campus)",
+      "category": "scholarship",
+      "location": "Canberra ACT",
+      "study_level": "undergraduate",
+      "summary": "A scholarship worth at least $5,000, available for up to 3 years, for students starting the Bachelor of Cyber Security at UNSW Canberra City Campus in Term 1, 2027. It is awarded on academic merit and has no separate application.",
+      "skills": [
+        "cyber security"
+      ],
+      "source_url": "https://www.scholarships.unsw.edu.au/scholarships/id/1884",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-002-E1",
+          "type": "enrolment",
+          "text": "You must start the Bachelor of Cyber Security at UNSW Canberra City Campus in Term 1, 2027.",
+          "evidence_summary": "The scholarship page ties the award to commencing this degree, campus and term.",
+          "source_url": "https://www.scholarships.unsw.edu.au/scholarships/id/1884",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-002-E2",
+          "type": "identity_requirement",
+          "text": "You must meet at least one of these: identify as a woman, non-binary or gender-diverse; be Aboriginal and/or Torres Strait Islander; be a former or transitioning Australian Defence Force member; or be a rural applicant (anywhere outside major cities).",
+          "evidence_summary": "The page lists four groups joined by 'or'. Only one needs to apply. Rural status uses the remoteness classification.",
+          "source_url": "https://www.scholarships.unsw.edu.au/scholarships/id/1884",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-002-E3",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen, an Australian permanent resident or a New Zealand citizen.",
+          "evidence_summary": "The page lists these three residency statuses.",
+          "source_url": "https://www.scholarships.unsw.edu.au/scholarships/id/1884",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page gives an opening date of 2026-07-01 but no closing date."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "conflicting",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it. The conflict is still there."
+      },
+      "data_notes": "The page shows a status of 'Closed' even though the opening date is 2026-07-01, so the status looks unreliable. It also does not say whether the $5,000 is a total or per year (it says up to 3 years). Open the page and check both before relying on this record. 2026-10-27: page still says Closed, opens 01/07/2026 and 'Closes: See below', but no closing date appears anywhere. Left as conflicting with an unknown deadline."
+    },
+    {
+      "id": "OPP-003",
+      "record_type": "real",
+      "title": "2026 Semester 1 Origin Digital Indigenous Scholarship (Current Students)",
+      "provider": "Curtin University (sponsor: Origin Digital)",
+      "category": "scholarship",
+      "location": "Western Australia (Curtin University)",
+      "study_level": "undergraduate",
+      "summary": "Up to $10,000 over one year for current Curtin undergraduates in eligible computing, IT and related courses, with possible paid vacation work. The Semester 1, 2026 round has closed.",
+      "skills": [
+        "computing",
+        "cyber security",
+        "software engineering",
+        "data science",
+        "networking"
+      ],
+      "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-003-E1",
+          "type": "identity_requirement",
+          "text": "You must be of Aboriginal and/or Torres Strait Islander descent.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-003-E2",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen.",
+          "evidence_summary": "The page lists Australian citizenship as a requirement.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-003-E3",
+          "type": "enrolment",
+          "text": "You must be a current Curtin student enrolled in at least 75 credits per semester in an eligible undergraduate course.",
+          "evidence_summary": "The page gives a minimum study load for Semester 1, 2026 and lists the eligible courses.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-003-E4",
+          "type": "education",
+          "text": "You need a course weighted average of at least 50.",
+          "evidence_summary": "The page sets a minimum course weighted average.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-003-E5",
+          "type": "field_of_study",
+          "text": "Your course must be on the eligible list, which includes computing, cyber security, software engineering, IT, data science, networking and information systems (and some business and innovation degrees).",
+          "evidence_summary": "The page lists eligible courses; double degrees count if one degree is listed.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-003-E6",
+          "type": "other",
+          "text": "You must not receive another scholarship from the same funding source or for the same purpose.",
+          "evidence_summary": "The page states this as a condition.",
+          "source_url": "https://scholarships.curtin.edu.au/Scholarship/?id=7819",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": "2026-02-25",
+        "note": "Semester 1, 2026 round opened 2026-01-21 and closed 2026-02-25. No later round is announced on the page."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "The 'Apply Online' link goes to a general Aboriginal and Torres Strait Islander scholarship form, not one specific to this scholarship. It is unclear whether the 75-credit rule applies to Semester 1 only or to every semester. 2026-10-27: conditions and dates match the page. The eligible course list includes Bachelor of Computing (Computer Science, Cyber Security or Software Engineering) and Bachelor of Technology (Computer Systems and Networking). Round closed 2026-02-25 and no later round is announced."
+    },
+    {
+      "id": "OPP-004",
+      "record_type": "real",
+      "title": "School of Cybernetics Scholarship for Indigenous Students",
+      "provider": "ANU School of Cybernetics",
+      "category": "scholarship",
+      "location": "Canberra ACT",
+      "study_level": "postgraduate",
+      "summary": "$34,000 a year plus up to $20,000 for relocation and cultural support for new Aboriginal and/or Torres Strait Islander students in ANU's Master of Applied Cybernetics programs. There is no separate application; you opt in when applying for the program.",
+      "skills": [
+        "cybernetics"
+      ],
+      "source_url": "https://study.anu.edu.au/scholarships/find-scholarship/school-cybernetics-scholarship-indigenous-students",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-004-E1",
+          "type": "citizenship_residency",
+          "text": "You must be a domestic student.",
+          "evidence_summary": "The page requires domestic student status.",
+          "source_url": "https://study.anu.edu.au/scholarships/find-scholarship/school-cybernetics-scholarship-indigenous-students",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-004-E2",
+          "type": "identity_requirement",
+          "text": "You must identify as Aboriginal and/or Torres Strait Islander.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://study.anu.edu.au/scholarships/find-scholarship/school-cybernetics-scholarship-indigenous-students",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-004-E3",
+          "type": "enrolment",
+          "text": "You must be a commencing ANU student with an offer for the Master of Applied Cybernetics or the Master of Applied Cybernetics (Advanced).",
+          "evidence_summary": "The page names these two programs as the eligible ones.",
+          "source_url": "https://study.anu.edu.au/scholarships/find-scholarship/school-cybernetics-scholarship-indigenous-students",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-004-E4",
+          "type": "enrolment",
+          "text": "You must keep a full-time study load to keep receiving the award.",
+          "evidence_summary": "The page states this as an ongoing condition.",
+          "source_url": "https://study.anu.edu.au/scholarships/find-scholarship/school-cybernetics-scholarship-indigenous-students",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2026-10-31",
+        "note": "The page gives an application period of 2026-04-01 to 2026-10-31."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "This is cybernetics, not cyber security, so the team should confirm it is in scope. The page says the award 'may' be offered each year, and it lists the level as Masters and Graduate certificate while naming only the two Masters programs. Check the conditions of award linked from the page. 2026-10-27: conditions, dates ($34,000 a year plus up to $20,000) and the 'no application needed' wording match the page. The page shows 'Open for applications' until 31-Oct-2026 and has no last-updated date."
+    },
+    {
+      "id": "OPP-005",
+      "record_type": "real",
+      "title": "Cadetships for Aboriginal & Torres Strait Islander Students (UNE listing)",
+      "provider": "University of New England (Oorala Aboriginal Centre)",
+      "category": "cadetship",
+      "location": "unknown",
+      "study_level": "undergraduate",
+      "summary": "Paid work-experience placements, usually 12 weeks over summer, with study allowances and mentoring for Indigenous undergraduates. The page does not say which fields or employers are available.",
+      "skills": [],
+      "source_url": "https://une.edu.au/scholarships/indigenous-scholarships/cadetships",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-005-E1",
+          "type": "identity_requirement",
+          "text": "You need to be Aboriginal or Torres Strait Islander.",
+          "evidence_summary": "Implied by the page's purpose rather than listed as a formal criterion.",
+          "source_url": "https://une.edu.au/scholarships/indigenous-scholarships/cadetships",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-005-E2",
+          "type": "enrolment",
+          "text": "You need to be enrolled full-time in an undergraduate degree.",
+          "evidence_summary": "Implied by the page rather than listed as a formal criterion.",
+          "source_url": "https://une.edu.au/scholarships/indigenous-scholarships/cadetships",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-005-E3",
+          "type": "unknown",
+          "text": "The page does not list formal eligibility criteria or which fields are covered.",
+          "evidence_summary": "No criteria, selection process or field list is given.",
+          "source_url": "https://une.edu.au/scholarships/indigenous-scholarships/cadetships",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "No application dates on the page; it points to the Oorala site for current opportunities."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "needs_recheck",
+        "method": "The official page was saved as a PDF on 2026-10-27 and compared with the record. The content matches but the page looks out of date, so the record stays needs_recheck."
+      },
+      "data_notes": "The page appears to have been last updated in November 2021 and refers to a body that may be out of date. It does not say whether IT or cyber placements exist. Confirm with Oorala before relying on it. This record is useful for testing missing-information handling. 2026-10-27: the page still names the Department of Employment & Workplace Relations as DEEWR and gives old contact details. The page was last modified in 2021. Ask Oorala whether this cadetship route still runs, or replace it with the current Indigenous Cadetship Support page."
+    },
+    {
+      "id": "OPP-006",
+      "record_type": "real",
+      "title": "CareerTrackers paid IT and technology internships",
+      "provider": "CareerTrackers",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "Paid internships for Aboriginal and Torres Strait Islander university students: two placements a year with the same employer (winter, up to five weeks; summer, up to twelve weeks). IT & Technology is one of the listed fields, and software engineering is a listed placement area.",
+      "skills": [
+        "ICT",
+        "software engineering"
+      ],
+      "source_url": "https://www.careertrackers.org.au/become-an-intern",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-006-E1",
+          "type": "identity_requirement",
+          "text": "The program is open to Aboriginal and Torres Strait Islander university students.",
+          "evidence_summary": "The page says it is open to Aboriginal and Torres Strait Islander university students.",
+          "source_url": "https://www.careertrackers.org.au/become-an-intern",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-006-E2",
+          "type": "enrolment",
+          "text": "You must be studying full time at university, in any year of study.",
+          "evidence_summary": "The page says full time, any year of study, no fee and no ATAR cut-off.",
+          "source_url": "https://www.careertrackers.org.au/become-an-intern",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-006-E3",
+          "type": "other",
+          "text": "Placements are matched to your degree, so which employers and IT placements are available depends on your field.",
+          "evidence_summary": "The page says placements are matched to what you study and lists fields such as IT & Technology.",
+          "source_url": "https://www.careertrackers.org.au/become-an-intern",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "No application deadline on this page. It links to a separate 'Key Dates' page for this year's dates, which has not been checked."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: ct-intern. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: conditions match the page. Winter placements run June to July and summer placements November to February."
+    },
+    {
+      "id": "OPP-007",
+      "record_type": "real",
+      "title": "ASD graduate, cadet, apprenticeship and work experience pathways",
+      "provider": "Australian Signals Directorate",
+      "category": "other",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "Australian Signals Directorate entry-level programs for school leavers, tertiary students and graduates: graduate, cadetship, apprenticeship and a cyber security and robotics work experience program. You must be an Australian citizen, and no work experience is needed.",
+      "skills": [
+        "ICT",
+        "cyber security"
+      ],
+      "source_url": "https://www.asd.gov.au/careers/im-starting-my-career",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-007-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen.",
+          "evidence_summary": "The page says you must be an Australian citizen for the entry-level programs.",
+          "source_url": "https://www.asd.gov.au/careers/im-starting-my-career",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-007-E2",
+          "type": "experience",
+          "text": "No previous work experience is needed.",
+          "evidence_summary": "The page says previous work experience is not required.",
+          "source_url": "https://www.asd.gov.au/careers/im-starting-my-career",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": null,
+        "note": "The page says applications for 2027 are closed and 2028 applications open in early 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: asd. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate; school leaver. No skills published in the CSV, so the skills list is empty. 2026-10-27: each program has its own page with its own rules. This record only covers what the shared entry page says."
+    },
+    {
+      "id": "OPP-008",
+      "record_type": "real",
+      "title": "APS Data and Digital Cadet Program",
+      "provider": "Digital Transformation Agency",
+      "category": "cadetship",
+      "location": "Australia-wide",
+      "study_level": "undergraduate",
+      "summary": "A pilot Australian Public Service cadet program run with the University of Newcastle and James Cook University. It offers guaranteed part-time work while you finish your degree and full-time work after, plus an academic allowance of up to $800 per unit for up to 4 units a semester. The program runs 1 to 3 years.",
+      "skills": [
+        "data",
+        "digital"
+      ],
+      "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-008-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen at the time of application.",
+          "evidence_summary": "The page lists Australian citizenship at the time of application.",
+          "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-008-E2",
+          "type": "education",
+          "text": "You must have completed one year (or equivalent) of a digital or technical degree when the program starts.",
+          "evidence_summary": "The page requires a completed year of a digital or technical degree.",
+          "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-008-E3",
+          "type": "enrolment",
+          "text": "You must have at least one year of study remaining when the program starts.",
+          "evidence_summary": "The page requires a minimum of one year of study remaining.",
+          "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-008-E4",
+          "type": "other",
+          "text": "You must be able to pass a national police record check.",
+          "evidence_summary": "The page lists a national police record check.",
+          "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-008-E5",
+          "type": "other",
+          "text": "You must have, or be willing to obtain and keep, an Australian Government security clearance.",
+          "evidence_summary": "The page lists the security clearance condition.",
+          "source_url": "https://www.dta.gov.au/join-our-team/data-and-digital-cadet-program",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page says applications open 1 April 2027. It gives no closing date."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: dta-cadet. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: page shows 'Last updated: 29 Jul 2026'. It does not say whether the pilot is limited to students at the two partner universities, so check before telling students it is open to everyone. The page does not state a location."
+    },
+    {
+      "id": "OPP-009",
+      "record_type": "real",
+      "title": "CyberCX Academy",
+      "provider": "CyberCX",
+      "category": "traineeship",
+      "location": "Australia-wide (Brisbane, Sydney, Canberra, Melbourne, Hobart, Adelaide, Perth) and New Zealand",
+      "study_level": "any",
+      "summary": "A paid, ongoing full-time job at CyberCX that starts with about six months of training, then a move into a specialist cyber security role. No prior experience is needed.",
+      "skills": [
+        "cyber security"
+      ],
+      "source_url": "https://cybercx.com.au/cyber-security-academy-cybercx/",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-009-E1",
+          "type": "experience",
+          "text": "No prior cyber security experience is needed.",
+          "evidence_summary": "The page says no prior experience is necessary.",
+          "source_url": "https://cybercx.com.au/cyber-security-academy-cybercx/",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-009-E2",
+          "type": "unknown",
+          "text": "The page lists no other conditions, such as work rights, citizenship or study level.",
+          "evidence_summary": "The page describes the program but gives no formal eligibility list.",
+          "source_url": "https://cybercx.com.au/cyber-security-academy-cybercx/",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page gives no closing date and asks you to subscribe for recruitment and intake dates. The team CSV said applications closed on 23 October 2026, but this page does not confirm that."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it. The old 23 October 2026 date from the CSV is not on the page, so I removed it."
+      },
+      "data_notes": "Source CSV id: cybercx. Cyber relevance in CSV: High. Study levels in CSV: Certificate; Diploma; Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: not checked. The CyberCX page you saved was the About Us page, not the Academy page. It only says the Academy has trained 300 professionals in three years. 2026-10-27: the Academy page says it launched in July 2022 and has trained more than 410 Associates. The About Us page gives a different count, so I have not used either number."
+    },
+    {
+      "id": "OPP-010",
+      "record_type": "real",
+      "title": "ANZ 2027/28 Summer Intern Program EOI",
+      "provider": "ANZ",
+      "category": "internship",
+      "location": "Victoria; New South Wales; Queensland",
+      "study_level": "undergraduate",
+      "summary": "ANZ is taking expressions of interest for its 2027/28 Summer Intern Program. It is a paid 8 to 10 week program starting in November 2027, with a Technology division among those normally offered. An expression of interest is not a formal application.",
+      "skills": [
+        "technology"
+      ],
+      "source_url": "https://careers.anz.com/job/Melbourne%2C-Sydney%2C-Brisbane-Expression-of-Interest-202728-AU-Summer-Intern-program/1366963666/",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-010-E1",
+          "type": "other",
+          "text": "The page lists no eligibility conditions. This is an expression of interest only, and formal criteria come when applications open.",
+          "evidence_summary": "The page says formal applications open in June/July 2027 and lists no criteria.",
+          "source_url": "https://careers.anz.com/job/Melbourne%2C-Sydney%2C-Brisbane-Expression-of-Interest-202728-AU-Summer-Intern-program/1366963666/",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "Formal applications open in June/July 2027. The page gives no closing date."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: anz-intern. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page."
+    },
+    {
+      "id": "OPP-011",
+      "record_type": "real",
+      "title": "ANZ 2028 Graduate Program EOI",
+      "provider": "ANZ",
+      "category": "graduate_program",
+      "location": "Victoria; New South Wales; South Australia; Queensland; Western Australia",
+      "study_level": "graduate",
+      "summary": "ANZ is taking expressions of interest for its 2028 Australian Graduate Program, which normally has a Technology stream among others. The page does not give dates.",
+      "skills": [
+        "technology"
+      ],
+      "source_url": "https://careers.anz.com/job/Mel%2C-Syd%2C-Adel%2C-Brisb%2C-Perth-Expression-of-Interest-2028-AU-Graduate-Program/1359695366/",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-011-E1",
+          "type": "other",
+          "text": "The page lists no eligibility conditions. This is an expression of interest only.",
+          "evidence_summary": "The page says ANZ will get in touch when applications open and gives no criteria.",
+          "source_url": "https://careers.anz.com/job/Mel%2C-Syd%2C-Adel%2C-Brisb%2C-Perth-Expression-of-Interest-2028-AU-Graduate-Program/1359695366/",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page gives no dates. ANZ says it will be in touch when applications open."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: anz-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. No skills published in the CSV, so the skills list is empty."
+    },
+    {
+      "id": "OPP-012",
+      "record_type": "real",
+      "title": "ASIC Graduate Program",
+      "provider": "ASIC",
+      "category": "graduate_program",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "ASIC's 12-month graduate program with three four-month rotations. Streams include Regulation and enforcement, Legal, Data and Technology and Professional Services. It is not specific to cyber security.",
+      "skills": [
+        "data",
+        "technology"
+      ],
+      "source_url": "https://careers.asic.gov.au/Graduate-program.html",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-012-E1",
+          "type": "unknown",
+          "text": "The page does not list eligibility conditions or dates.",
+          "evidence_summary": "The page describes the program but gives no eligibility list or closing date. It links to a security check page.",
+          "source_url": "https://careers.asic.gov.au/Graduate-program.html",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page shows no dates."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: asic-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. No skills published in the CSV, so the skills list is empty. 2026-10-27: Data and Technology is one of four streams."
+    },
+    {
+      "id": "OPP-013",
+      "record_type": "real",
+      "title": "CommBank technology graduate and internship pathways",
+      "provider": "Commonwealth Bank",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "CommBank technology graduate, intern and analyst programs, including Engineering, Data Science and AI, Advanced Analytics and Cyber Security streams.",
+      "skills": [
+        "cyber security",
+        "technology"
+      ],
+      "source_url": "https://www.commbank.com.au/about-us/careers/graduate-intern-programs/technology.html",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-013-E1",
+          "type": "unknown",
+          "text": "The page lists no eligibility conditions.",
+          "evidence_summary": "The page lists streams but no eligibility rules.",
+          "source_url": "https://www.commbank.com.au/about-us/careers/graduate-intern-programs/technology.html",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": null,
+        "note": "The page says applications for the Graduate, Intern and Analyst Programs are now closed. No next date is given."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: commbank-tech. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page."
+    },
+    {
+      "id": "OPP-014",
+      "record_type": "real",
+      "title": "Suncorp Vacation Program",
+      "provider": "Suncorp Group",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "undergraduate",
+      "summary": "A paid summer internship at Suncorp (November to February, minimum $37 an hour as a casual) for students in their penultimate year. Technology and Transformation roles include Cyber Security Analysts and Software Engineers.",
+      "skills": [
+        "cyber security",
+        "technology"
+      ],
+      "source_url": "https://www.suncorpgroup.com.au/careers/graduates/vacation-program",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-014-E1",
+          "type": "enrolment",
+          "text": "You must be in your penultimate year of study.",
+          "evidence_summary": "The page says the program is for students in their penultimate year.",
+          "source_url": "https://www.suncorpgroup.com.au/careers/graduates/vacation-program",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page says applications for Summer 2027/2028 open in August 2027. It gives no closing date."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: suncorp-vac. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page."
+    },
+    {
+      "id": "OPP-015",
+      "record_type": "real",
+      "title": "Telstra student and graduate opportunities",
+      "provider": "Telstra",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "Telstra's student and graduate programs. The 14-month paid Graduate Program is for people who finished their studies in the last three years. The First Nations Careers Program, run with CareerTrackers, gives First Nations university students work experience and a pathway into the Graduate Program.",
+      "skills": [
+        "technology"
+      ],
+      "source_url": "https://www.telstra.com.au/careers/students-and-graduates",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-015-E1",
+          "type": "education",
+          "text": "For the Graduate Program, you must have finished your studies within the last three years (mature-age graduates are included).",
+          "evidence_summary": "The page says the Graduate Program is open to candidates who completed their studies in the last three years.",
+          "source_url": "https://www.telstra.com.au/careers/students-and-graduates",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page shows no dates."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: telstra-student. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: the First Nations Careers Program runs through CareerTrackers, so it links to OPP-006. The First Nations program's own conditions are on a separate page I have not seen."
+    },
+    {
+      "id": "OPP-016",
+      "record_type": "real",
+      "title": "BAE Systems Australia internships",
+      "provider": "BAE Systems",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "undergraduate",
+      "summary": "A paid 12-week summer internship at BAE Systems Australia (November to February, from about $33 an hour) for students in their second-last year. Applications open in May each year and stay open for about four weeks.",
+      "skills": [],
+      "source_url": "https://www.baesystems.com/careers/locations/australia/interns",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-016-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen who is eligible for an Australian Defence security clearance.",
+          "evidence_summary": "The page says this under how to apply.",
+          "source_url": "https://www.baesystems.com/careers/locations/australia/interns",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-016-E2",
+          "type": "enrolment",
+          "text": "You must be in the second-to-last year of a degree in a relevant field.",
+          "evidence_summary": "The page says the penultimate year of a degree in a relevant field.",
+          "source_url": "https://www.baesystems.com/careers/locations/australia/interns",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page says applications open each May and stay open for about four weeks. No 2027 dates are shown yet."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: bae-intern. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. No skills published in the CSV, so the skills list is empty. 2026-10-27: the page has a First Nations tab that I could not see in the PDF."
+    },
+    {
+      "id": "OPP-017",
+      "record_type": "real",
+      "title": "BAE Systems Australia Graduate Program",
+      "provider": "BAE Systems",
+      "category": "graduate_program",
+      "location": "Australia-wide",
+      "study_level": "graduate",
+      "summary": "A two-year graduate program at BAE Systems Australia, from about $85,200 a year, with two stream options. Applications generally open in March and most close mid-April.",
+      "skills": [],
+      "source_url": "https://careers.baesystems.com/locations/australia/graduates",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-017-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen who is eligible for an Australian Defence security clearance.",
+          "evidence_summary": "The page says this under when and how to apply.",
+          "source_url": "https://careers.baesystems.com/locations/australia/graduates",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-017-E2",
+          "type": "education",
+          "text": "You must have finished a bachelor degree or higher in a relevant profession before you start.",
+          "evidence_summary": "The page says a bachelor degree or higher in a relevant profession, completed before the program starts.",
+          "source_url": "https://careers.baesystems.com/locations/australia/graduates",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page says applications generally open in March and most positions close in mid-April. Some roles stay open or reopen."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: bae-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. No skills published in the CSV, so the skills list is empty."
+    },
+    {
+      "id": "OPP-019",
+      "record_type": "real",
+      "title": "Leidos Australia early-career pathways",
+      "provider": "Leidos",
+      "category": "other",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "Leidos Australia early-career pathways: a cadetship for current students, a permanent graduate program, a paid 12-month internship for students in their penultimate year, and Aboriginal and Torres Strait Islander traineeships run with the Indigenous Defence & Infrastructure Consortium.",
+      "skills": [
+        "ICT",
+        "software engineering",
+        "cyber security"
+      ],
+      "source_url": "https://www.leidos.com/company/global/australia/careers/early-careers",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-019-E1",
+          "type": "unknown",
+          "text": "Each pathway has different rules. Cadetships are for students in a degree, diploma or certificate. Internships suit penultimate-year students. Traineeships are for Aboriginal and Torres Strait Islander people.",
+          "evidence_summary": "The page describes four pathways and gives no single eligibility list.",
+          "source_url": "https://www.leidos.com/company/global/australia/careers/early-careers",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page shows no dates. Internships start in early February, graduates in late January and traineeships at different times of year."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: leidos. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate; Certificate; Diploma. No skills published in the CSV, so the skills list is empty. 2026-10-27: the identity rule only applies to the traineeship, so I did not make it a condition for the whole record."
+    },
+    {
+      "id": "OPP-020",
+      "record_type": "real",
+      "title": "EY student opportunities in cybersecurity",
+      "provider": "EY Australia",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "any",
+      "summary": "EY Australia cybersecurity vacationer (student) and graduate opportunities, working on real client projects. The page says it is open to applicants from any degree, with cyber security, business, computer science and information systems preferred.",
+      "skills": [
+        "cyber security"
+      ],
+      "source_url": "https://www.ey.com/en_au/careers/cybersecurity-student-opportunities",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-020-E1",
+          "type": "field_of_study",
+          "text": "Applicants from any degree are welcome. Cyber security, business, computer science and information systems are preferred.",
+          "evidence_summary": "The page says it is open to any degrees and lists four desired fields.",
+          "source_url": "https://www.ey.com/en_au/careers/cybersecurity-student-opportunities",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page shows no dates. It has an Apply now button and says to speak to an EY representative at events."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: ey-cyber. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: the page does not list work rights or citizenship rules."
+    },
+    {
+      "id": "OPP-021",
+      "record_type": "real",
+      "title": "KPMG Vacation Program: technology and digital",
+      "provider": "KPMG Australia",
+      "category": "internship",
+      "location": "Australia-wide",
+      "study_level": "undergraduate",
+      "summary": "A paid, full-time KPMG vacation internship of three to eight weeks for undergraduate and postgraduate students in their second-last year. One of the four pathways is Engineering, Technology and Digital.",
+      "skills": [
+        "technology",
+        "digital"
+      ],
+      "source_url": "https://kpmg.com/au/en/careers/graduates/vacation-program.html",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-021-E1",
+          "type": "enrolment",
+          "text": "You must be in the second-last year of your degree.",
+          "evidence_summary": "The page lists this as an eligibility criterion.",
+          "source_url": "https://kpmg.com/au/en/careers/graduates/vacation-program.html",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-021-E2",
+          "type": "citizenship_residency",
+          "text": "You must have full-time working rights in Australia.",
+          "evidence_summary": "The page says citizenship or the appropriate visa.",
+          "source_url": "https://kpmg.com/au/en/careers/graduates/vacation-program.html",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-021-E3",
+          "type": "other",
+          "text": "You must be available to work full-time for 3 to 8 weeks over the summer break.",
+          "evidence_summary": "The page lists this as an eligibility criterion.",
+          "source_url": "https://kpmg.com/au/en/careers/graduates/vacation-program.html",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": null,
+        "note": "The page says the 2026/27 applications are closed and gives no date for 2027/28."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: kpmg-vac. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page."
+    },
+    {
+      "id": "OPP-022",
+      "record_type": "real",
+      "title": "Reserve Bank IT Graduate Program",
+      "provider": "Reserve Bank of Australia",
+      "category": "graduate_program",
+      "location": "New South Wales",
+      "study_level": "graduate",
+      "summary": "A two-year paid IT graduate program at the Reserve Bank of Australia with four six-month rotations. Rotations can include Cyber Security, Software Development and Cloud Platform Engineering.",
+      "skills": [
+        "ICT",
+        "cyber security"
+      ],
+      "source_url": "https://www.rba.gov.au/careers/careers-at-the-rba/students-and-graduates/information-technology.html",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-022-E1",
+          "type": "education",
+          "text": "You must hold or be completing a degree in IT, computer science, engineering or a closely related field, with strong academic results.",
+          "evidence_summary": "The page lists this under eligibility criteria.",
+          "source_url": "https://www.rba.gov.au/careers/careers-at-the-rba/students-and-graduates/information-technology.html",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-022-E2",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian permanent resident or citizen, or a New Zealand citizen.",
+          "evidence_summary": "The page lists this under eligibility criteria.",
+          "source_url": "https://www.rba.gov.au/careers/careers-at-the-rba/students-and-graduates/information-technology.html",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": "2026-04-06",
+        "note": "The page says applications opened on 2 March 2026 and closed on 6 April 2026. The program starts in February 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: rba-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page."
+    },
+    {
+      "id": "OPP-023",
+      "record_type": "real",
+      "title": "QUT CSIRO Indigenous STEM Scholarship",
+      "provider": "QUT / CSIRO",
+      "category": "scholarship",
+      "location": "Queensland",
+      "study_level": "any",
+      "summary": "$10,000 in the first year (two $5,000 instalments), then $10,000 a year up to $40,000 in total, for Aboriginal and Torres Strait Islander students in science, technology, engineering or mathematics at QUT. The page lists study areas such as information technology and data science.",
+      "skills": [
+        "STEM"
+      ],
+      "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/csiro-indigenous-stem-scholarship",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-023-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen or permanent resident.",
+          "evidence_summary": "The page lists Australian citizen or permanent resident.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-023-E2",
+          "type": "identity_requirement",
+          "text": "You must be of Aboriginal and/or Torres Strait Islander descent, confirmed through QUT's CATSID process.",
+          "evidence_summary": "The page links eligibility to the CATSID policy.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-023-E3",
+          "type": "enrolment",
+          "text": "You must be admitted and enrolled full-time (36 or more credit points per teaching period) in an eligible undergraduate or postgraduate coursework course at QUT.",
+          "evidence_summary": "The page states full-time study of 36 credit points or more in an eligible coursework award.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-023-E4",
+          "type": "field_of_study",
+          "text": "Your course must be in Science, Technology, Engineering or Mathematics.",
+          "evidence_summary": "The page names these four disciplines and lists study areas such as information technology and data science.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": null,
+        "note": "The page says applications are currently closed. The scholarship is offered each year and applications usually open in February. Payments start in Semester 1, 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: qut-csiro. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: conditions and value match the page."
+    },
+    {
+      "id": "OPP-024",
+      "record_type": "real",
+      "title": "QUT Accenture Indigenous Undergraduate Scholarship",
+      "provider": "QUT / Accenture",
+      "category": "scholarship",
+      "location": "Queensland",
+      "study_level": "school_leaver",
+      "summary": "$10,000 over one year (two $5,000 instalments) for Indigenous Australian school leavers starting a STEM degree at QUT in 2027. There is no separate application: eligible students who put QUT as their first preference on their QTAC application are considered.",
+      "skills": [
+        "STEM"
+      ],
+      "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-024-E1",
+          "type": "identity_requirement",
+          "text": "You must be an Indigenous Australian commencing student, confirmed through QUT's CATSID process if you haven't already verified your descent.",
+          "evidence_summary": "The page lists this and the CATSID confirmation process.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-024-E2",
+          "type": "citizenship_residency",
+          "text": "The page lists citizenship as Australian.",
+          "evidence_summary": "The eligibility criteria on the page give citizenship as Australian.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-024-E3",
+          "type": "education",
+          "text": "You must be graduating Year 12 in 2026 or have graduated Year 12 in 2025, with exceptionally meritorious results on your unadjusted ATAR or IB Diploma.",
+          "evidence_summary": "The page lists the Year 12 timing and the ATAR or IB merit condition.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-024-E4",
+          "type": "enrolment",
+          "text": "You must be starting university for the first time in 2027 and have no previous tertiary study (school programs such as START QUT are allowed).",
+          "evidence_summary": "The page states this commencing student condition.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-024-E5",
+          "type": "other",
+          "text": "You must have applied through QTAC and have QUT as your first preference at the December and January offer rounds, and received a QUT offer.",
+          "evidence_summary": "The page lists the QTAC and first preference conditions.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-024-E6",
+          "type": "field_of_study",
+          "text": "You must be commencing a STEM award course at QUT in Semester 1, 2027.",
+          "evidence_summary": "The page lists a STEM course starting in Semester 1, 2027.",
+          "source_url": "https://www.qut.edu.au/study/fees-and-scholarships/scholarships/accenture-indigenous-australian-undergraduate-scholarship",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": null,
+        "note": "The page says scholarships are closed and the next offer round is January 2027. No separate application is needed."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: qut-accenture. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: this is for school leavers, so the study level is school_leaver, not undergraduate. A student already at university does not qualify. Not applicable to current students."
+    },
+    {
+      "id": "OPP-025",
+      "record_type": "real",
+      "title": "Services Australia Graduate Program: Digital stream",
+      "provider": "Services Australia",
+      "category": "graduate_program",
+      "location": "Australia-wide",
+      "study_level": "graduate",
+      "summary": "The digital stream of the Services Australia National Graduate Program, for graduates with a digital degree who want an ICT career. Work can include implementing cyber security and keeping systems secure.",
+      "skills": [
+        "digital",
+        "cyber security",
+        "ICT"
+      ],
+      "source_url": "https://www.servicesaustralia.gov.au/digital-stream-national-graduate-program",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-025-E1",
+          "type": "field_of_study",
+          "text": "You should have a degree in a field such as computer science, cyber security, ICT, software engineering, business analysis or a related area.",
+          "evidence_summary": "The page lists degrees it is looking for, plus some related areas.",
+          "source_url": "https://www.servicesaustralia.gov.au/digital-stream-national-graduate-program",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-025-E2",
+          "type": "unknown",
+          "text": "This page gives no dates, citizenship rules or other conditions.",
+          "evidence_summary": "The page only describes the stream and the degrees. Other rules are on the how-to-apply page.",
+          "source_url": "https://www.servicesaustralia.gov.au/digital-stream-national-graduate-program",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "unknown",
+        "date": null,
+        "note": "The page shows no dates."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: services-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: the saved page was a Services Australia search results page, not the program page. The results say the Digital stream is for people with a digital degree, and the program is for recent graduates or final-year students. Still needs the stream page: https://www.servicesaustralia.gov.au/digital-stream-national-graduate-program 2026-10-27: the Digital stream page was last updated 3 April 2025. Its source link now points to this page instead of the search results. The how-to-apply page has the dates and other rules and has not been checked."
+    },
+    {
+      "id": "OPP-026",
+      "record_type": "real",
+      "title": "ASIO Technologist Graduate Program",
+      "provider": "ASIO",
+      "category": "graduate_program",
+      "location": "Australian Capital Territory",
+      "study_level": "graduate",
+      "summary": "A 12-month Technologist Graduate Program at ASIO in Canberra, with intakes in mid-2027 and early 2028. Streams include Information and Cyber Security and Software Engineering. Aboriginal and Torres Strait Islander people are encouraged to apply.",
+      "skills": [
+        "technology",
+        "cyber security"
+      ],
+      "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-026-E1",
+          "type": "citizenship_residency",
+          "text": "You must be an Australian citizen.",
+          "evidence_summary": "The page lists this under Eligibility.",
+          "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-026-E2",
+          "type": "other",
+          "text": "You must be assessed as suitable to hold a TOP SECRET-Privileged Access security clearance.",
+          "evidence_summary": "The page lists this under Eligibility.",
+          "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-026-E3",
+          "type": "education",
+          "text": "You must have finished your degree before the program starts, and no more than 3 years earlier.",
+          "evidence_summary": "The page says the degree must be completed before commencement or no more than 3 years prior.",
+          "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-026-E4",
+          "type": "field_of_study",
+          "text": "Your degree should be in a field such as cyber security, computer science, IT, data science, software or network engineering, or digital forensics.",
+          "evidence_summary": "The page gives a list of degrees that 'could include, but are not limited to' these fields.",
+          "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-026-E5",
+          "type": "location",
+          "text": "You must be willing to relocate to Canberra.",
+          "evidence_summary": "The page says positions are in Canberra and applicants elsewhere must be willing to relocate.",
+          "source_url": "https://www.careers.asio.gov.au/public/jncustomsearch.viewFullSingle?in_jnCounter=221301299&in_organid=12852",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "closed",
+        "date": "2026-03-30",
+        "note": "The page shows a closing date of 30 March 2026 for the 2027 and 2028 intakes."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: asio-grad. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: the page says Aboriginal and Torres Strait Islander peoples are encouraged to apply. That is not an eligibility condition. ASIO also asks applicants not to discuss their application with others."
+    },
+    {
+      "id": "OPP-028",
+      "record_type": "real",
+      "title": "CSIRO Indigenous STEM Scholarship",
+      "provider": "Charles Sturt University",
+      "category": "scholarship",
+      "location": "New South Wales; Australia-wide",
+      "study_level": "any",
+      "summary": "Up to $50,000 for Aboriginal and Torres Strait Islander students at Charles Sturt University studying a science, technology, engineering or mathematics course: two $5,000 instalments a year for the length of the degree (part-time students are paid at 50%).",
+      "skills": [
+        "STEM"
+      ],
+      "source_url": "https://www.csu.edu.au/scholarships/scholarships-grants/find-scholarship/foundation/any-year/csiro-indigenous-stem-scholarship",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-028-E1",
+          "type": "identity_requirement",
+          "text": "You must be an Indigenous Australian person.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://www.csu.edu.au/scholarships/scholarships-grants/find-scholarship/foundation/any-year/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-028-E2",
+          "type": "enrolment",
+          "text": "You must be a Charles Sturt University student actively enrolled in the session awarding.",
+          "evidence_summary": "The page lists active enrolment at CSU.",
+          "source_url": "https://www.csu.edu.au/scholarships/scholarships-grants/find-scholarship/foundation/any-year/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-028-E3",
+          "type": "field_of_study",
+          "text": "You must be studying an undergraduate or postgraduate course in Science, Technology, Engineering or Mathematics.",
+          "evidence_summary": "The page lists a STEM course at either level.",
+          "source_url": "https://www.csu.edu.au/scholarships/scholarships-grants/find-scholarship/foundation/any-year/csiro-indigenous-stem-scholarship",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2027-02-03",
+        "note": "The page says applications close at 11:59pm on 3 Feb 2027 for both commencing and continuing students."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: csu-csiro. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. Skills come from the CSV wording and are not yet checked against the official page. 2026-10-27: page says preference may be given to full-time students. Ongoing payments depend on satisfactory academic progress."
+    },
+    {
+      "id": "OPP-029",
+      "record_type": "real",
+      "title": "Envato Foundation Indigenous Scholarship",
+      "provider": "UQ",
+      "category": "scholarship",
+      "location": "Queensland; Australia-wide",
+      "study_level": "any",
+      "summary": "$7,000 for one year (subject to the annual fund distribution) for Aboriginal and Torres Strait Islander students enrolled in any UQ coursework program. It is open to all study areas, so it is not specific to technology or cyber security.",
+      "skills": [],
+      "source_url": "https://scholarships.uq.edu.au/scholarship/envato-foundation-indigenous-scholarship",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-029-E1",
+          "type": "identity_requirement",
+          "text": "You must be an Australian Aboriginal and/or Torres Strait Islander person.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/envato-foundation-indigenous-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-029-E2",
+          "type": "other",
+          "text": "You must be able to demonstrate financial hardship.",
+          "evidence_summary": "The page lists financial hardship as the first eligibility condition.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/envato-foundation-indigenous-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-029-E3",
+          "type": "enrolment",
+          "text": "You must be enrolled in any coursework program at the University of Queensland.",
+          "evidence_summary": "The page says any coursework program at UQ.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/envato-foundation-indigenous-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-029-E4",
+          "type": "other",
+          "text": "You must be an InspireU program participant.",
+          "evidence_summary": "The page lists InspireU participation.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/envato-foundation-indigenous-scholarship",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2027-02-26",
+        "note": "The page says applications open 17 August 2026 and close 26 February 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "Source CSV id: uq-envato. Cyber relevance in CSV: High. Study levels in CSV: Undergraduate; postgraduate. No skills published in the CSV, so the skills list is empty. 2026-10-27: the page lists all study areas, so this is a general scholarship with no cyber focus. Domestic students only. One application covers all UQ Aspire and Education Scholarship Scheme awards."
+    },
+    {
+      "id": "OPP-030",
+      "record_type": "real",
+      "title": "UniSC First Nations scholarships",
+      "provider": "University of the Sunshine Coast",
+      "category": "scholarship",
+      "location": "Queensland; Australia-wide",
+      "study_level": "any",
+      "summary": "UniSC's Round 1 2027 scholarship applications for Aboriginal and/or Torres Strait Islander students are open until 30 November 2026, with outcomes by 26 February 2027. The page lists about 20 UniSC awards plus outside awards (such as the Sheldon Indigenous Engineering Bursary). It names no cybersecurity-specific award.",
+      "skills": [],
+      "source_url": "https://www.unisc.edu.au/study/scholarships/scholarships-for-australian-aboriginal-andor-torres-strait-islander-students",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-030-E1",
+          "type": "unknown",
+          "text": "Each award has its own course and academic criteria. This page does not list them.",
+          "evidence_summary": "The hub page lists the awards and rounds but gives conditions only on each award's own page.",
+          "source_url": "https://www.unisc.edu.au/study/scholarships/scholarships-for-australian-aboriginal-andor-torres-strait-islander-students",
+          "checkable_from_profile": false
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2026-11-30",
+        "note": "Round 1 2027 is open until 30 November 2026 and applicants are told by 26 February 2027. Round 2 runs 1 April to 31 May."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it. The deadline is confirmed. Eligibility is listed per award, not on this page."
+      },
+      "data_notes": "Source CSV id: unisc-first. Cyber relevance in CSV: Medium. Study levels in CSV: Undergraduate; postgraduate. No skills published in the CSV, so the skills list is empty. 2026-10-27: this is a hub page, not one scholarship. No identity or other condition is stated on the page itself."
+    },
+    {
+      "id": "OPP-031",
+      "record_type": "real",
+      "title": "Rio Tinto Indigenous Scholarship",
+      "provider": "The University of Queensland",
+      "category": "scholarship",
+      "location": "Queensland",
+      "study_level": "undergraduate",
+      "skills": [],
+      "source_url": "https://scholarships.uq.edu.au/scholarship/rio-tinto-indigenous-scholarship",
+      "summary": "$10,000 over 2 years for one current UQ undergraduate who is an Aboriginal and/or Torres Strait Islander person. Open to all study areas, with a possible preference for STEM-related or mining-related fields.",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-031-E1",
+          "type": "other",
+          "text": "You must be able to demonstrate financial need.",
+          "evidence_summary": "The page lists financial need as an eligibility condition.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/rio-tinto-indigenous-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-031-E2",
+          "type": "identity_requirement",
+          "text": "You must be an Australian Aboriginal and/or Torres Strait Islander person.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/rio-tinto-indigenous-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-031-E3",
+          "type": "enrolment",
+          "text": "You must be enrolled full time in any undergraduate program at the University of Queensland.",
+          "evidence_summary": "The page says full time in any UQ undergraduate program.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/rio-tinto-indigenous-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-031-E4",
+          "type": "citizenship_residency",
+          "text": "The page lists the student type as Domestic.",
+          "evidence_summary": "The details panel gives the student type as Domestic.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/rio-tinto-indigenous-scholarship",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2027-02-26",
+        "note": "The page says applications open 17 August 2026 and close 26 February 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "2026-10-27: one award is offered. The page says preference may go to STEM-related or mining-related study and to past Rio Tinto award recipients and InspireU participants. A preference is not an eligibility condition. The team CSV rated cyber relevance High, but the page lists all study areas, so a cyber focus is not confirmed."
+    },
+    {
+      "id": "OPP-032",
+      "record_type": "real",
+      "title": "Santos Aboriginal and Torres Strait Islander Education Scholarship",
+      "provider": "The University of Queensland",
+      "category": "scholarship",
+      "location": "Queensland",
+      "study_level": "undergraduate",
+      "skills": [],
+      "source_url": "https://scholarships.uq.edu.au/scholarship/santos-aboriginal-and-torres-strait-islander-education-scholarship",
+      "summary": "$10,000 a year full-time or $5,000 part-time, for up to four years, for current UQ undergraduates who are Aboriginal and/or Torres Strait Islander people. Open to all study areas.",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-032-E1",
+          "type": "other",
+          "text": "You must be able to demonstrate financial hardship.",
+          "evidence_summary": "The page lists financial hardship as an eligibility condition.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/santos-aboriginal-and-torres-strait-islander-education-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-032-E2",
+          "type": "identity_requirement",
+          "text": "You must be an Australian Aboriginal and/or Torres Strait Islander person.",
+          "evidence_summary": "The page lists this as a requirement.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/santos-aboriginal-and-torres-strait-islander-education-scholarship",
+          "checkable_from_profile": false
+        },
+        {
+          "id": "OPP-032-E3",
+          "type": "enrolment",
+          "text": "You must be enrolled in any coursework program in the semester the scholarship is awarded.",
+          "evidence_summary": "The page says any coursework program in the semester of the award.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/santos-aboriginal-and-torres-strait-islander-education-scholarship",
+          "checkable_from_profile": true
+        },
+        {
+          "id": "OPP-032-E4",
+          "type": "citizenship_residency",
+          "text": "The page lists the student type as Domestic.",
+          "evidence_summary": "The details panel gives the student type as Domestic.",
+          "source_url": "https://scholarships.uq.edu.au/scholarship/santos-aboriginal-and-torres-strait-islander-education-scholarship",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2027-02-26",
+        "note": "The page says applications open 17 August 2026 and close 26 February 2027."
+      },
+      "verification": {
+        "verified_on": "2026-10-27",
+        "status": "verified",
+        "method": "The official page was saved as a PDF on 2026-10-27 and each condition and date in the record was compared with it."
+      },
+      "data_notes": "2026-10-27: the page lists preferences for some fields (such as engineering and environmental science) and for named Traditional Owner groups. A preference is not an eligibility condition, so none are listed. The team CSV rated cyber relevance Medium; the page lists all study areas."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1-draft",
+  "note": "This is an example only. Copy one record from 'opportunities' for each new record. Delete this note in the real data file. Drafted by Samer (SAM-01) for Stefano (importer) and Hakm (display) to review.",
+  "opportunities": [
+    {
+      "id": "OPP-000",
+      "record_type": "real",
+      "title": "The name of the opportunity, as the provider writes it",
+      "provider": "The organisation offering it",
+      "category": "scholarship",
+      "location": "National",
+      "study_level": "undergraduate",
+      "summary": "One or two plain sentences saying what it is.",
+      "skills": [
+        "example skill"
+      ],
+      "source_url": "https://official-page.example.gov.au/",
+      "eligibility_conditions": [
+        {
+          "id": "OPP-000-E1",
+          "type": "education",
+          "text": "The condition in plain language, as the student will read it.",
+          "evidence_summary": "A short summary of what the official page says. Do not copy long text.",
+          "source_url": "https://official-page.example.gov.au/",
+          "checkable_from_profile": true
+        }
+      ],
+      "deadline": {
+        "status": "date",
+        "date": "2026-12-31",
+        "note": "Optional. For example: applications close 11:59pm AEDT."
+      },
+      "verification": {
+        "verified_on": "2026-10-26",
+        "status": "needs_recheck",
+        "method": "How it was checked. Only change the status to verified after a person has compared each condition with the page."
+      },
+      "data_notes": "Anything unclear or conflicting. Leave this empty if there is nothing."
+    }
+  ]
+}
