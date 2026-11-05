@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import localOpportunityDataset from '../../data/opportunities.json';
 import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
+import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
 
 /**
  * ==============================================================================
@@ -22,17 +23,6 @@ import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluat
 
 // Vite bundles the shared source JSON in development and production. No copied dataset.
 const LOCAL_OPPORTUNITIES = readOpportunities(localOpportunityDataset);
-
-// Eligibility decisions belong to FastAPI. The current opportunity fetch does not
-// return profile-specific evaluations; never infer results from prerequisite text.
-function evaluatePrerequisite() {
-  return {
-    status: 'not_yet_evaluated',
-    badgeClass: 'badge-passed',
-    label: 'Not yet evaluated',
-    reason: 'Awaiting backend eligibility evaluation. Missing information remains uncertain; identity conditions require voluntary student confirmation.'
-  };
-}
 
 const initialProfile = {
   education_level: 'not_stated',
@@ -223,7 +213,9 @@ function IconPrinter({ size = 15, className = "" }) {
   );
 }
 
-export default function App() {
+// eligibilityInput is an internal integration seam, not a backend wire contract.
+// It stays null in main.jsx until an agreed transport/decoder is implemented.
+export default function App({ eligibilityInput = null } = {}) {
   // ---------------------------------------------------------------------------
   // [HAK-02] State: Student Profile & Goal Form
   // ---------------------------------------------------------------------------
@@ -274,6 +266,15 @@ export default function App() {
   const [apiError, setApiError] = useState(null);
   const [backendDataSource, setBackendDataSource] = useState('local-development');
   const [datasetNote, setDatasetNote] = useState(localOpportunityDataset.dataset_note);
+
+  const eligibility = useMemo(() => {
+    if (apiError || eligibilityInput?.unavailable) return emptyEligibility();
+    if (eligibilityInput == null) return emptyEligibility();
+    if (!matchesProfileSnapshot(eligibilityInput.profileSnapshot, activeUserProfile)) {
+      return emptyEligibility('stale', 'Eligibility results do not match the current profile. A new backend evaluation is required.');
+    }
+    return adaptEligibilityResults(eligibilityInput.payload, opportunities, eligibilityInput.decodeResponse);
+  }, [eligibilityInput, activeUserProfile, opportunities, apiError]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -457,7 +458,7 @@ export default function App() {
         id: `step-${Date.now()}-1`,
         phase: 'Milestone 1: Prerequisite Study & Gap Bridging',
         title: 'Review Published Requirements & Plan Foundational Study',
-        description: `Review the published prerequisites for ${opportunity.title} and choose relevant study or lab work. Eligibility has not yet been evaluated by the backend.`,
+        description: `Review the published prerequisites and condition results for ${opportunity.title} and choose relevant study or lab work. This preparation plan does not determine eligibility.`,
         timeline: 'Weeks 1 - 4',
         status: 'pending',
         actionableUrl: ''
@@ -975,6 +976,18 @@ export default function App() {
             {datasetNote && <p>{datasetNote}</p>}
           </aside>
 
+          <aside className={`eligibility-notice ${eligibility.warning ? 'eligibility-warning' : ''}`}
+            role={eligibility.warning ? 'alert' : 'status'} aria-label="Eligibility evaluation status">
+            {eligibility.warning ? (
+              <p>{eligibility.warning}</p>
+            ) : eligibility.state === 'ready' && eligibility.results.size > 0 ? (
+              <p>Validated backend condition results are shown for the current profile. They are condition outcomes, not a suitability score or an overall eligibility decision.</p>
+            ) : (
+              <p>Eligibility evaluation is unavailable or no backend results have been supplied. Conditions are Not yet evaluated. Published opportunity information remains available.</p>
+            )}
+            <p>Not yet evaluated means there is no accepted result. Uncertain is an explicit backend outcome requiring more information or review.</p>
+          </aside>
+
           {/* Search and Filters Bar */}
           <div className="filter-bar">
             <div className="search-box">
@@ -1054,16 +1067,14 @@ export default function App() {
                 const deadlineEvaluation = evaluateDeadline(opportunity.deadline);
                 const prereqList = opportunity.eligibility_conditions;
 
-                // Calculate eligibility stats
+                // Count only validated backend outcomes; missing results stay neutral.
                 const evaluatedPrereqs = prereqList.map((prereq) => ({
                   ...prereq,
-                  evaluation: evaluatePrerequisite()
+                  evaluation: presentCondition(eligibility, opportunity.id, prereq)
                 }));
 
-                const satisfiedCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'satisfied').length;
-                const unmetCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'unmet').length;
-                const uncertainCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'uncertain').length;
-                const pendingCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'not_yet_evaluated').length;
+                const counts = summarizeConditions(evaluatedPrereqs);
+                const evaluatedCount = prereqList.length - counts.not_yet_evaluated;
 
                 return (
                   <article key={opportunity.id} data-opportunity-id={opportunity.id} className="opportunity-card" aria-labelledby={`opp-title-${opportunity.id}`}>
@@ -1103,28 +1114,29 @@ export default function App() {
                       {opportunity.deadline.note && <p>{opportunity.deadline.note}</p>}
                     </div>
 
-                    {/* [HAK-04] Eligibility & Skill Gap Breakdown */}
+                    {/* [HAK-04] Backend condition results and published evidence */}
                     <div className="eligibility-breakdown">
                       <div className="eligibility-summary">
                         <span className="breakdown-title">Published Prerequisites &amp; Eligibility Breakdown:</span>
-                        <div className="eligibility-score-pills">
-                          <span className="summary-pill pill-green" title="Prerequisites satisfied by your profile">
-                            {satisfiedCount} Satisfied
-                          </span>
-                          <span className="summary-pill pill-red" title="Prerequisites confirmed unmet by the backend">
-                            {unmetCount} Unmet
-                          </span>
-                          <span className="summary-pill pill-amber" title="Requires external validation or clearance documentation">
-                            {uncertainCount} Uncertain
-                          </span>
-                          <span className="summary-pill badge-passed">{pendingCount} Not yet evaluated</span>
+                        <div className="eligibility-score-pills" aria-label="Condition result counts">
+                          {Object.entries(counts).filter(([, count]) => count > 0).map(([status, count]) => (
+                            <span key={status} className={`summary-pill ${ELIGIBILITY_STATES[status].badgeClass}`}>
+                              {count} {ELIGIBILITY_STATES[status].label}
+                            </span>
+                          ))}
                         </div>
+                        <p className="eligibility-summary-note">
+                          {evaluatedCount === 0
+                            ? 'No validated backend results for this opportunity.'
+                            : `${evaluatedCount} of ${prereqList.length} conditions have validated backend results. This is not an overall eligibility decision.`}
+                        </p>
                       </div>
 
                       <ul className="prereq-list">
                         {evaluatedPrereqs.map((item) => (
                           <li key={item.id} className="prereq-item" data-condition-id={item.id}
-                            data-checkable-from-profile={item.checkable_from_profile}>
+                            data-checkable-from-profile={item.checkable_from_profile}
+                            data-eligibility-status={item.evaluation.status}>
                             <div className="prereq-header">
                               <span className={`status-tag ${item.evaluation.badgeClass}`}>
                                 {item.evaluation.label}
@@ -1137,9 +1149,12 @@ export default function App() {
                               <p>{item.type === 'identity_requirement'
                                 ? 'Voluntary student confirmation only; identity is never automatically evaluated or scored.'
                                 : item.checkable_from_profile
-                                  ? 'Marked checkable from profile in the source data; awaiting backend evaluation.'
+                                  ? 'Marked checkable from profile in the source data; decisions belong to the backend.'
                                   : 'Requires human review; not checkable from profile.'}</p>
                               <p><strong>Status:</strong> {item.evaluation.reason}</p>
+                              {item.evaluation.backendExplanation && (
+                                <p><strong>Backend explanation:</strong> {item.evaluation.backendExplanation}</p>
+                              )}
                             </div>
                           </li>
                         ))}

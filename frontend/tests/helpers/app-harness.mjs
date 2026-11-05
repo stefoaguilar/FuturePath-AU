@@ -12,15 +12,15 @@ const code = buildSync({
   bundle: true, write: false, format: 'cjs', platform: 'node', external: ['react']
 }).outputFiles[0].text;
 
-export function renderInitialApp() {
+export function renderInitialApp(props = {}) {
   const module = { exports: {} };
   runInNewContext(code, { module, exports: module.exports, require, URL });
-  return renderToStaticMarkup(React.createElement(module.exports.default));
+  return renderToStaticMarkup(React.createElement(module.exports.default, props));
 }
 
 // Run the actual component handlers against a small state harness without adding
 // a browser/test dependency. The SSR check below also uses real React hooks.
-export function harness({ fetchImpl = async () => { throw new Error('Offline test'); } } = {}) {
+export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {} } = {}) {
   const state = [];
   let cursor = 0;
   let tree;
@@ -51,7 +51,7 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
     window: { confirm: () => true },
     document: { getElementById: () => null }
   });
-  const render = () => { cursor = 0; tree = module.exports.default(); };
+  const render = () => { cursor = 0; tree = module.exports.default(appProps); };
   const nodes = () => {
     const result = [];
     function visit(node) {
@@ -87,6 +87,7 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
   render();
   return {
     render, nodes, find, text, byId, button, change, submit,
+    setProps: (props) => { appProps = props; render(); },
     profile: () => JSON.parse(JSON.stringify(activeProfile)),
     markup: () => text(tree)
   };

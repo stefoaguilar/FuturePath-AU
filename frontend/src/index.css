@@ -838,6 +838,38 @@ body {
   margin-bottom: 16px;
 }
 
+.eligibility-notice {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+}
+
+.eligibility-warning {
+  background-color: var(--status-uncertain-bg);
+  color: var(--status-uncertain-text);
+  border-color: var(--status-uncertain-border);
+}
+
+.eligibility-notice p + p {
+  margin-top: 6px;
+}
+
+.eligibility-summary-note {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.badge-neutral {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
 .eligibility-summary {
   display: flex;
   justify-content: space-between;
