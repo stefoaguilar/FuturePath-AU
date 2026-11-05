@@ -20,7 +20,7 @@ export function renderInitialApp(props = {}) {
 
 // Run the actual component handlers against a small state harness without adding
 // a browser/test dependency. The SSR check below also uses real React hooks.
-export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {}, timers = { setTimeout, clearTimeout } } = {}) {
+export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {}, timers = { setTimeout, clearTimeout }, confirmImpl = () => true, alertImpl = () => {}, dateImpl = Date } = {}) {
   const state = [];
   let cursor = 0;
   let tree;
@@ -52,9 +52,9 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
     module, exports: module.exports,
     require: (name) => name === 'react' ? hooks : require(name),
     fetch: fetchImpl,
-    URL, AbortController, setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout,
+    URL, AbortController, Date: dateImpl, setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout,
     console: { warn() {} },
-    window: { confirm: () => true },
+    window: { confirm: confirmImpl, alert: alertImpl },
     document: { getElementById: () => null }
   });
   const render = () => { cursor = 0; effects = []; tree = module.exports.default(appProps); };
@@ -99,6 +99,7 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
       return () => cleanups.forEach((cleanup) => cleanup?.());
     },
     profile: () => JSON.parse(JSON.stringify(activeProfile)),
+    hasStateValue: (value) => state.includes(value),
     markup: () => text(tree)
   };
 }

@@ -1078,6 +1078,29 @@ body {
   transition: all 0.25s ease;
 }
 
+.pathway-approval-note {
+  margin-bottom: 16px;
+}
+
+.pathway-evidence {
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.pathway-evidence summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pathway-evidence ul {
+  padding-left: 20px;
+}
+
+.pathway-evidence li {
+  margin-top: 8px;
+}
+
 .pathway-draft {
   border-color: #93c5fd;
   background-color: #ffffff;

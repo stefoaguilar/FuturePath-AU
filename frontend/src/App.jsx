@@ -24,6 +24,11 @@ import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesP
 // Vite bundles the shared source JSON in development and production. No copied dataset.
 const LOCAL_OPPORTUNITIES = readOpportunities(localOpportunityDataset);
 
+const EMPTY_STEP_EDIT = { title: '', description: '', timeline: '' };
+const EMPTY_CUSTOM_STEP = {
+  phase: 'Milestone 2: Application Preparation', title: '', description: '', timeline: 'Weeks 5 - 6'
+};
+
 const initialProfile = {
   education_level: 'not_stated',
   enrolment_status: 'not_stated',
@@ -282,7 +287,7 @@ export default function App({ eligibilityInput = null } = {}) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   // ---------------------------------------------------------------------------
-  // [HAK-05] State: Editable Sequential Career Pathway
+  // [HAK-06] State: Editable Sequential Career Pathway
   // ---------------------------------------------------------------------------
   const [selectedOpportunityForPathway, setSelectedOpportunityForPathway] = useState(null);
   const [pathwayMilestones, setPathwayMilestones] = useState([
@@ -298,8 +303,8 @@ export default function App({ eligibilityInput = null } = {}) {
     {
       id: 'step-2',
       phase: 'Milestone 1: Prerequisite Bridging & Eligibility Verification',
-      title: 'Compile Verified Documentation & Clearance Prerequisites',
-      description: 'Organize certified Australian citizenship records, academic transcripts, and background check references for official review.',
+      title: 'Review Documentation Requested by the Provider',
+      description: 'After choosing an opportunity, check its published conditions and confirm which documents, if any, the provider requests.',
       timeline: 'Weeks 3 - 5',
       status: 'pending',
       actionableUrl: ''
@@ -311,7 +316,7 @@ export default function App({ eligibilityInput = null } = {}) {
       description: 'Review published opportunity requirements, tailor cyber resume, and submit application directly to the provider (Mandatory safeguard: Platform never submits automatically).',
       timeline: 'Weeks 6 - 8',
       status: 'pending',
-      actionableUrl: 'https://www.asd.gov.au/careers/cadetships'
+      actionableUrl: ''
     },
     {
       id: 'step-4',
@@ -328,16 +333,36 @@ export default function App({ eligibilityInput = null } = {}) {
   const [isPathwayApproved, setIsPathwayApproved] = useState(false);
   const [approvedTimestamp, setApprovedTimestamp] = useState(null);
   const [editingStepId, setEditingStepId] = useState(null);
-  const [editedStepData, setEditedStepData] = useState({ title: '', description: '', timeline: '' });
+  const [editedStepData, setEditedStepData] = useState(EMPTY_STEP_EDIT);
 
   // Custom step addition modal/form
   const [showAddStepForm, setShowAddStepForm] = useState(false);
-  const [newStep, setNewStep] = useState({
-    phase: 'Milestone 2: Application Preparation',
-    title: '',
-    description: '',
-    timeline: 'Weeks 5 - 6'
-  });
+  const [newStep, setNewStep] = useState(EMPTY_CUSTOM_STEP);
+  // Synchronous lock and plan version protect against handlers from older renders,
+  // including the interval before React commits approval or replacement state.
+  const pathwayGuard = useRef({ approved: false, version: 0, editingId: null, nextCustomId: 0 });
+  const pathwayVersion = pathwayGuard.current.version;
+  const canEditPathway = () => !pathwayGuard.current.approved && pathwayGuard.current.version === pathwayVersion;
+  const resetPathwayForms = () => {
+    pathwayGuard.current.editingId = null;
+    setEditingStepId(null);
+    setEditedStepData(EMPTY_STEP_EDIT);
+    setShowAddStepForm(false);
+    setNewStep(EMPTY_CUSTOM_STEP);
+  };
+  const updateEditedStep = (field, value) => {
+    if (!canEditPathway() || pathwayGuard.current.editingId !== editingStepId) return;
+    setEditedStepData((prev) => ({ ...prev, [field]: value }));
+  };
+  const updateCustomStep = (field, value) => {
+    if (!canEditPathway()) return;
+    setNewStep((prev) => ({ ...prev, [field]: value }));
+  };
+  const toggleCustomStepForm = (show) => {
+    if (!canEditPathway()) return;
+    setShowAddStepForm(show);
+    if (!show) setNewStep(EMPTY_CUSTOM_STEP);
+  };
 
   // ---------------------------------------------------------------------------
   // [HAK-03 & HAK-06] Fetch from FastAPI Backend with Fallback
@@ -458,15 +483,17 @@ export default function App({ eligibilityInput = null } = {}) {
   // [HAK-05] Pathway Management Functions
   // ---------------------------------------------------------------------------
   const generatePathwayForOpportunity = (opportunity) => {
-    if (isPathwayApproved) {
+    if (pathwayGuard.current.approved) {
       const confirmReset = window.confirm(
         'Your pathway is currently locked as "Approved by Student". Generating a new pathway will unlock and replace your current plan. Proceed?'
       );
       if (!confirmReset) return;
-      setIsPathwayApproved(false);
-      setApprovedTimestamp(null);
     }
-
+    pathwayGuard.current.approved = false;
+    const planVersion = ++pathwayGuard.current.version;
+    setIsPathwayApproved(false);
+    setApprovedTimestamp(null);
+    resetPathwayForms();
     setSelectedOpportunityForPathway(opportunity);
 
     const deadline = evaluateDeadline(opportunity.deadline);
@@ -491,7 +518,7 @@ export default function App({ eligibilityInput = null } = {}) {
     // Generate editable preparation guidance without inferring eligibility gaps.
     const newMilestones = [
       {
-        id: `step-${Date.now()}-1`,
+        id: `step-${planVersion}-1`,
         phase: 'Milestone 1: Prerequisite Study & Gap Bridging',
         title: 'Review Published Requirements & Plan Foundational Study',
         description: `Review the published prerequisites and condition results for ${opportunity.title} and choose relevant study or lab work. This preparation plan does not determine eligibility.`,
@@ -500,23 +527,24 @@ export default function App({ eligibilityInput = null } = {}) {
         actionableUrl: ''
       },
       {
-        id: `step-${Date.now()}-2`,
+        id: `step-${planVersion}-2`,
         phase: 'Milestone 1: Prerequisite Study & Gap Bridging',
-        title: 'Gather Published Prerequisite & Verification Documentation',
-        description: `Assemble official transcripts, proof of citizenship/residency, and references required by ${opportunity.provider}.`,
+        title: 'Review Published Conditions & Confirm Required Evidence',
+        description: `Review the published conditions below for ${opportunity.provider}. Prepare only evidence explicitly requested by the provider. If documentation is not specified, ask the provider what, if anything, is required.`,
+        sourceConditions: opportunity.eligibility_conditions.map((condition) => ({ ...condition })),
         timeline: 'Weeks 3 - 5',
         status: 'pending',
         actionableUrl: ''
       },
       {
-        id: `step-${Date.now()}-3`,
+        id: `step-${planVersion}-3`,
         phase: 'Milestone 2: Application Submission (Student-Initiated)',
         ...applicationStep,
         status: 'pending',
         actionableUrl: opportunity.source_url
       },
       {
-        id: `step-${Date.now()}-4`,
+        id: `step-${planVersion}-4`,
         phase: 'Milestone 3: Practical Portfolio & Interview Readiness',
         title: `Technical Scenario & Interview Preparation for ${opportunity.category}`,
         description: 'Complete hands-on incident scenario walkthroughs, lab writeups, and behavioral interview practice.',
@@ -535,73 +563,68 @@ export default function App({ eligibilityInput = null } = {}) {
     }
   };
 
-  // Reorder steps: Move Up
-  const moveStepUp = (index) => {
-    if (index === 0 || isPathwayApproved) return;
-    const updated = [...pathwayMilestones];
-    const temp = updated[index - 1];
-    updated[index - 1] = updated[index];
-    updated[index] = temp;
-    setPathwayMilestones(updated);
-  };
-
-  // Reorder steps: Move Down
-  const moveStepDown = (index) => {
-    if (index === pathwayMilestones.length - 1 || isPathwayApproved) return;
-    const updated = [...pathwayMilestones];
-    const temp = updated[index + 1];
-    updated[index + 1] = updated[index];
-    updated[index] = temp;
-    setPathwayMilestones(updated);
-  };
-
-  // Delete step
-  const deleteStep = (id) => {
-    if (isPathwayApproved) return;
-    if (pathwayMilestones.length <= 1) {
-      alert('Your pathway must contain at least one milestone step.');
-      return;
-    }
-    setPathwayMilestones(pathwayMilestones.filter((s) => s.id !== id));
-  };
-
-  // In-place editing
-  const startEditingStep = (step) => {
-    if (isPathwayApproved) return;
-    setEditingStepId(step.id);
-    setEditedStepData({
-      title: step.title,
-      description: step.description,
-      timeline: step.timeline
+  // Move by stable ID using current state, rather than a captured array/index.
+  const moveStep = (id, direction) => {
+    if (!canEditPathway()) return;
+    setPathwayMilestones((prev) => {
+      const index = prev.findIndex((step) => step.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+      const updated = [...prev];
+      [updated[index], updated[target]] = [updated[target], updated[index]];
+      return updated;
     });
   };
 
-  const saveEditedStep = (id) => {
-    if (!editedStepData.title.trim()) {
-      alert('Step title cannot be empty.');
+  const deleteStep = (id) => {
+    if (!canEditPathway()) return;
+    if (pathwayMilestones.length <= 1) {
+      window.alert('Your pathway must contain at least one milestone step.');
       return;
     }
-    setPathwayMilestones(
-      pathwayMilestones.map((s) => (s.id === id ? { ...s, ...editedStepData } : s))
-    );
+    setPathwayMilestones((prev) => prev.length > 1 ? prev.filter((step) => step.id !== id) : prev);
+    if (pathwayGuard.current.editingId === id) {
+      pathwayGuard.current.editingId = null;
+      setEditingStepId(null);
+      setEditedStepData(EMPTY_STEP_EDIT);
+    }
+  };
+
+  const startEditingStep = (step) => {
+    if (!canEditPathway()) return;
+    pathwayGuard.current.editingId = step.id;
+    setEditingStepId(step.id);
+    setEditedStepData({ title: step.title, description: step.description, timeline: step.timeline });
+  };
+
+  const saveEditedStep = (id) => {
+    if (!canEditPathway() || pathwayGuard.current.editingId !== id) return;
+    if (!editedStepData.title.trim()) {
+      window.alert('Step title cannot be empty.');
+      return;
+    }
+    setPathwayMilestones((prev) => prev.map((step) => step.id === id ? { ...step, ...editedStepData, title: editedStepData.title.trim() } : step));
+    pathwayGuard.current.editingId = null;
     setEditingStepId(null);
+    setEditedStepData(EMPTY_STEP_EDIT);
   };
 
   const cancelEditingStep = () => {
+    if (!canEditPathway()) return;
+    pathwayGuard.current.editingId = null;
     setEditingStepId(null);
+    setEditedStepData(EMPTY_STEP_EDIT);
   };
 
-  // Add custom step
   const handleAddCustomStep = (e) => {
     e.preventDefault();
-    if (isPathwayApproved) return;
+    if (!canEditPathway()) return;
     if (!newStep.title.trim()) {
-      alert('Please enter a milestone title.');
+      window.alert('Please enter a milestone title.');
       return;
     }
-
     const created = {
-      id: `custom-step-${Date.now()}`,
+      id: `custom-step-${++pathwayGuard.current.nextCustomId}`,
       phase: newStep.phase,
       title: newStep.title.trim(),
       description: newStep.description.trim() || 'Custom student milestone step.',
@@ -609,41 +632,35 @@ export default function App({ eligibilityInput = null } = {}) {
       status: 'pending',
       actionableUrl: ''
     };
-
-    setPathwayMilestones([...pathwayMilestones, created]);
-    setNewStep({
-      phase: 'Milestone 2: Application Preparation',
-      title: '',
-      description: '',
-      timeline: 'Weeks 5 - 6'
-    });
+    setPathwayMilestones((prev) => [...prev, created]);
+    setNewStep(EMPTY_CUSTOM_STEP);
     setShowAddStepForm(false);
   };
 
-  // [HAK-05] Approve Pathway
+  // [HAK-06] Student approval locks the plan, never establishes eligibility.
   const handleApprovePathway = () => {
+    if (!canEditPathway()) return;
     const confirmation = window.confirm(
       'Explicit Student Approval Confirmation:\n\n' +
         'By approving this pathway, you confirm that you have reviewed and adjusted each milestone to suit your schedule.\n\n' +
+        'Approval does not confirm eligibility or that applications are open.\n\n' +
         'Important Safeguard: FuturePath AU will NOT submit any applications on your behalf. You remain fully in control of direct submissions.\n\n' +
         'Lock and mark this pathway as Approved by Student?'
     );
-
-    if (confirmation) {
-      setIsPathwayApproved(true);
-      setApprovedTimestamp(
-        new Date().toLocaleString('en-AU', {
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        })
-      );
-      setEditingStepId(null);
-      setShowAddStepForm(false);
-    }
+    if (!confirmation || !canEditPathway()) return;
+    pathwayGuard.current.approved = true;
+    pathwayGuard.current.version += 1;
+    setIsPathwayApproved(true);
+    setApprovedTimestamp(new Date().toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' }));
+    resetPathwayForms();
   };
 
   const handleUnlockPathway = () => {
+    if (!pathwayGuard.current.approved || pathwayGuard.current.version !== pathwayVersion) return;
+    pathwayGuard.current.approved = false;
+    pathwayGuard.current.version += 1;
     setIsPathwayApproved(false);
+    setApprovedTimestamp(null);
   };
 
   // ---------------------------------------------------------------------------
@@ -1258,7 +1275,7 @@ export default function App({ eligibilityInput = null } = {}) {
         >
           <div className="section-header">
             <div>
-              <span className="section-step-tag">[HAK-05] Human Oversight &amp; Agency</span>
+              <span className="section-step-tag">[HAK-06] Human Oversight &amp; Agency</span>
               <h2 id="pathway-heading">Student Career Pathway Planner</h2>
             </div>
             {isPathwayApproved ? (
@@ -1273,6 +1290,8 @@ export default function App({ eligibilityInput = null } = {}) {
               <span className="badge badge-draft">Draft Plan (Editable by Student)</span>
             )}
           </div>
+
+          <p className="form-help pathway-approval-note">Student approval confirms your plan choices only. It does not establish eligibility, confirm application availability or submit any applications.</p>
 
           {/* Locked vs Draft Informational Alert */}
           {isPathwayApproved ? (
@@ -1353,7 +1372,7 @@ export default function App({ eligibilityInput = null } = {}) {
                             type="text"
                             className="form-input"
                             value={editedStepData.title}
-                            onChange={(e) => setEditedStepData({ ...editedStepData, title: e.target.value })}
+                            onChange={(e) => updateEditedStep('title', e.target.value)}
                           />
                         </div>
                         <div className="form-group">
@@ -1366,7 +1385,7 @@ export default function App({ eligibilityInput = null } = {}) {
                             className="form-input"
                             value={editedStepData.description}
                             onChange={(e) =>
-                              setEditedStepData({ ...editedStepData, description: e.target.value })
+                              updateEditedStep('description', e.target.value)
                             }
                           />
                         </div>
@@ -1380,7 +1399,7 @@ export default function App({ eligibilityInput = null } = {}) {
                             className="form-input"
                             value={editedStepData.timeline}
                             onChange={(e) =>
-                              setEditedStepData({ ...editedStepData, timeline: e.target.value })
+                              updateEditedStep('timeline', e.target.value)
                             }
                           />
                         </div>
@@ -1405,6 +1424,20 @@ export default function App({ eligibilityInput = null } = {}) {
                       <>
                         <h4 className="milestone-title">{step.title}</h4>
                         <p className="milestone-desc">{step.description}</p>
+                        {step.sourceConditions && (
+                          <details className="pathway-evidence">
+                            <summary>Published conditions and evidence sources</summary>
+                            <ul>
+                              {step.sourceConditions.map((condition) => (
+                                <li key={condition.id}>
+                                  <p>{condition.text}</p>
+                                  <p><strong>Evidence:</strong> {condition.evidence_summary}</p>
+                                  <a href={condition.source_url} target="_blank" rel="noopener noreferrer">Official condition source <IconExternalLink /></a>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
                         {step.actionableUrl && (
                           <div className="milestone-action-link">
                             <span className="safeguard-badge-inline">Mandatory Safeguard: Student Direct Submission</span>
@@ -1427,7 +1460,7 @@ export default function App({ eligibilityInput = null } = {}) {
                         <button
                           type="button"
                           className="control-btn"
-                          onClick={() => moveStepUp(index)}
+                          onClick={() => moveStep(step.id, -1)}
                           disabled={index === 0}
                           title="Move step earlier in sequence"
                           aria-label={`Move step ${index + 1} up`}
@@ -1437,7 +1470,7 @@ export default function App({ eligibilityInput = null } = {}) {
                         <button
                           type="button"
                           className="control-btn"
-                          onClick={() => moveStepDown(index)}
+                          onClick={() => moveStep(step.id, 1)}
                           disabled={index === pathwayMilestones.length - 1}
                           title="Move step later in sequence"
                           aria-label={`Move step ${index + 1} down`}
@@ -1477,7 +1510,7 @@ export default function App({ eligibilityInput = null } = {}) {
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
-                  onClick={() => setShowAddStepForm(true)}
+                  onClick={() => toggleCustomStepForm(true)}
                 >
                   + Add Custom Milestone Step
                 </button>
@@ -1493,7 +1526,7 @@ export default function App({ eligibilityInput = null } = {}) {
                         id="new-step-phase"
                         className="form-input"
                         value={newStep.phase}
-                        onChange={(e) => setNewStep({ ...newStep, phase: e.target.value })}
+                        onChange={(e) => updateCustomStep('phase', e.target.value)}
                       >
                         <option value="Milestone 1: Prerequisite Study & Bridging">Milestone 1: Prerequisite Study</option>
                         <option value="Milestone 2: Application Preparation">Milestone 2: Application Preparation</option>
@@ -1510,7 +1543,7 @@ export default function App({ eligibilityInput = null } = {}) {
                         type="text"
                         className="form-input"
                         value={newStep.timeline}
-                        onChange={(e) => setNewStep({ ...newStep, timeline: e.target.value })}
+                        onChange={(e) => updateCustomStep('timeline', e.target.value)}
                         placeholder="e.g., Weeks 5 - 7"
                       />
                     </div>
@@ -1525,7 +1558,7 @@ export default function App({ eligibilityInput = null } = {}) {
                       type="text"
                       className="form-input"
                       value={newStep.title}
-                      onChange={(e) => setNewStep({ ...newStep, title: e.target.value })}
+                      onChange={(e) => updateCustomStep('title', e.target.value)}
                       placeholder="e.g., Complete TryHackMe Pre-Security &amp; Blue Team Track"
                     />
                   </div>
@@ -1539,7 +1572,7 @@ export default function App({ eligibilityInput = null } = {}) {
                       rows={2}
                       className="form-input"
                       value={newStep.description}
-                      onChange={(e) => setNewStep({ ...newStep, description: e.target.value })}
+                      onChange={(e) => updateCustomStep('description', e.target.value)}
                       placeholder="Detail specific tasks, labs, or documentation needed."
                     />
                   </div>
@@ -1551,7 +1584,7 @@ export default function App({ eligibilityInput = null } = {}) {
                     <button
                       type="button"
                       className="btn btn-outline btn-sm"
-                      onClick={() => setShowAddStepForm(false)}
+                      onClick={() => toggleCustomStepForm(false)}
                     >
                       Cancel
                     </button>
@@ -1583,7 +1616,7 @@ export default function App({ eligibilityInput = null } = {}) {
               <div className="approved-summary-bar">
                 <div className="approved-meta">
                   <span className="stamp-badge">STUDENT APPROVED</span>
-                  <span>Sequential Pathway Plan verified by student on {approvedTimestamp}</span>
+                  <span>Plan choices approved by student on {approvedTimestamp}</span>
                 </div>
                 <button
                   type="button"
