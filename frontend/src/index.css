@@ -724,6 +724,22 @@ body {
   color: var(--text-muted);
 }
 
+.load-more-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.load-more-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.load-more-actions .btn:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 3px;
+}
+
 .opportunities-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));

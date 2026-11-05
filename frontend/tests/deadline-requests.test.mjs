@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { DEMO_REFERENCE_DATE, evaluateDeadline } from '../src/opportunityData.js';
-import { harness } from './helpers/app-harness.mjs';
+import { harness, loadAllOpportunities } from './helpers/app-harness.mjs';
 
 const dataset = JSON.parse(readFileSync(new URL('../../data/opportunities.json', import.meta.url), 'utf8'));
 const records = dataset.opportunities;
@@ -83,6 +83,7 @@ test('network, HTTP, invalid JSON and invalid schema failures use safe, distinct
     await ui.button('Check API Status').props.onClick(); ui.render();
     assert.match(ui.markup(), message);
     assert.doesNotMatch(ui.markup(), /PRIVATE_ERROR_DETAILS|private\/server\/path/);
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), records.map((r) => r.id));
     assert.match(ui.markup(), /Development fallback: data\/opportunities.json/);
     assert.equal(ui.button('Retry Connection').props.disabled, false);
@@ -101,6 +102,7 @@ test('timeout aborts the active request and restores fallback without exposing r
   await pending; ui.render();
   assert.match(ui.markup(), /took too long to respond/);
   assert.doesNotMatch(ui.markup(), /PRIVATE_ABORT_DETAILS/);
+  loadAllOpportunities(ui);
   assert.equal(ids(ui).length, 30);
   assert.equal(timers.count(), 0);
 });
@@ -115,6 +117,7 @@ test('a response finishing after its timeout cannot be accepted even when transp
   timers.fire();
   body.resolve({ opportunities: [records[0]] });
   await pending; ui.render();
+  loadAllOpportunities(ui);
   assert.equal(ids(ui).length, 30);
   assert.match(ui.markup(), /took too long to respond/);
 });
@@ -134,10 +137,12 @@ test('older successes and failures cannot overwrite a newer success', async () =
     assert.equal(timers.count(), 1);
     newer.resolve(response([records[1]], 'Newer dataset note'));
     await second; ui.render();
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), [records[1].id]);
     if (oldFails) older.reject(new Error('Older private failure'));
     else older.resolve(response([records[0]], 'Older dataset note'));
     await first; ui.render();
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), [records[1].id]);
     assert.match(ui.markup(), /Newer dataset note/);
     assert.doesNotMatch(ui.markup(), /Older dataset note|Opportunity API unavailable/);
@@ -159,6 +164,7 @@ test('an older completion cannot clear the newer request loading state', async (
   assert.match(ui.markup(), /Fetching opportunities/);
   newer.resolve(response([records[1]]));
   await second; ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), [records[1].id]);
   assert.equal(ui.button('Check API Status').props.disabled, false);
 });
@@ -176,9 +182,11 @@ test('an older JSON body cannot replace the newest fallback or its error message
   const second = start();
   newer.reject(new Error('New request network failure'));
   await second; ui.render();
+  loadAllOpportunities(ui);
   assert.equal(ids(ui).length, 30);
   oldBody.resolve({ opportunities: [records[0]], dataset_note: 'Stale body' });
   await first; ui.render();
+  loadAllOpportunities(ui);
   assert.equal(ids(ui).length, 30);
   assert.match(ui.markup(), /Could not connect/);
   assert.doesNotMatch(ui.markup(), /Stale body/);
@@ -198,9 +206,11 @@ test('effect cleanup cancels requests and a subsequent mount accepts only its ow
   const newCleanup = ui.runEffects();
   newer.resolve(response([records[1]]));
   await new Promise((resolve) => setImmediate(resolve)); ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), [records[1].id]);
   older.resolve(response([records[0]]));
   await new Promise((resolve) => setImmediate(resolve)); ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), [records[1].id]);
   newCleanup();
   assert.equal(timers.count(), 0);
@@ -214,14 +224,17 @@ test('retry recovers from fallback, preserves filters and accepts a valid empty 
   } });
   ui.change('searchQuery', 'OPP-032');
   await ui.button('Check API Status').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), ['OPP-032']);
   const retry = ui.button('Retry Connection').props.onClick(); ui.render();
   assert.match(ui.markup(), /Fetching opportunities/);
   await retry; ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), ['OPP-032']);
   assert.match(ui.markup(), /Source: FastAPI opportunity API/);
   assert.doesNotMatch(ui.markup(), /Opportunity API unavailable/);
   await ui.button('Check API Status').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), []);
   assert.match(ui.markup(), /Source: FastAPI opportunity API/);
   assert.doesNotMatch(ui.markup(), /Development fallback: data/);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { adaptEligibilityResults, emptyEligibility, matchesProfileSnapshot, presentCondition, summarizeConditions } from '../src/eligibilityResults.js';
-import { harness, renderInitialApp } from './helpers/app-harness.mjs';
+import { harness, renderInitialApp, loadAllOpportunities } from './helpers/app-harness.mjs';
 
 const records = JSON.parse(readFileSync(new URL('../../data/opportunities.json', import.meta.url), 'utf8')).opportunities;
 const opportunity = records.find((r) => r.eligibility_conditions.filter((c) => c.type !== 'identity_requirement').length >= 3);
@@ -63,6 +63,7 @@ test('missing results stay neutral and distinct from explicit backend uncertaint
   assert.doesNotMatch(text, /0 Satisfied|0 Unmet|0 Uncertain/);
   assert.match(ui.markup(), /Eligibility evaluation is unavailable/);
   assert.match(ui.markup(), /Uncertain is an explicit backend outcome/);
+  loadAllOpportunities(ui);
   const conditions = ui.nodes().filter((node) => node.props['data-condition-id']);
   assert.equal(conditions.length, 81);
   assert.ok(conditions.every((node) => node.props['data-eligibility-status'] === 'not_yet_evaluated'));
@@ -109,6 +110,7 @@ test('unknown statuses, malformed responses, decoder errors and duplicate result
   supply(ui, [{ ...valid, status: 'unknown' }]);
   assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
   assert.match(ui.markup(), /Eligibility response rejected/);
+  loadAllOpportunities(ui);
   assert.equal(ui.nodes().filter((node) => node.type === 'article').length, 30);
 });
 
@@ -194,6 +196,7 @@ test('evaluation service failures and opportunity connection failures clear resu
   assert.match(ui.markup(), /Eligibility evaluation is unavailable/);
   ui.setProps({ eligibilityInput: input });
   await ui.button('Check API Status').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.equal(ui.nodes().filter((node) => node.type === 'article').length, 30);
   assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
   assert.match(ui.markup(), /Development fallback/);

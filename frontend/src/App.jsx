@@ -23,6 +23,7 @@ import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesP
 
 // Vite bundles the shared source JSON in development and production. No copied dataset.
 const LOCAL_OPPORTUNITIES = readOpportunities(localOpportunityDataset);
+const OPPORTUNITIES_PER_BATCH = 6;
 
 const EMPTY_STEP_EDIT = { title: '', description: '', timeline: '' };
 const EMPTY_CUSTOM_STEP = {
@@ -285,6 +286,15 @@ export default function App({ eligibilityInput = null } = {}) {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [visibleCount, setVisibleCount] = useState(OPPORTUNITIES_PER_BATCH);
+  const updateSearchQuery = (query) => {
+    setSearchQuery(query);
+    setVisibleCount(OPPORTUNITIES_PER_BATCH);
+  };
+  const updateCategory = (category) => {
+    setSelectedCategory(category);
+    setVisibleCount(OPPORTUNITIES_PER_BATCH);
+  };
 
   // ---------------------------------------------------------------------------
   // [HAK-06] State: Editable Sequential Career Pathway
@@ -478,6 +488,7 @@ export default function App({ eligibilityInput = null } = {}) {
       return matchesSearch && matchesCategory;
     });
   }, [opportunities, searchQuery, selectedCategory]);
+  const visibleOpportunities = filteredOpportunities.slice(0, visibleCount);
 
   // ---------------------------------------------------------------------------
   // [HAK-05] Pathway Management Functions
@@ -1014,8 +1025,8 @@ export default function App({ eligibilityInput = null } = {}) {
               <span className="section-step-tag">[HAK-03 &amp; HAK-04] Opportunity Dataset</span>
               <h2 id="opportunities-heading">Opportunities &amp; Published Eligibility Conditions</h2>
             </div>
-            <span className="results-count">
-              Showing <strong>{filteredOpportunities.length}</strong> of {opportunities.length} Records
+            <span className="results-count" role="status" aria-live="polite" aria-atomic="true">
+              Showing <strong>{isLoading ? 0 : visibleOpportunities.length}</strong> of {filteredOpportunities.length} opportunities
             </span>
           </div>
 
@@ -1054,13 +1065,13 @@ export default function App({ eligibilityInput = null } = {}) {
                 className="form-input search-input"
                 placeholder="Search by title, provider, location, skill, or keyword..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => updateSearchQuery(e.target.value)}
               />
               {searchQuery && (
                 <button
                   type="button"
                   className="search-clear-btn"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => updateSearchQuery('')}
                   aria-label="Clear search text"
                 >
                   &times;
@@ -1075,7 +1086,7 @@ export default function App({ eligibilityInput = null } = {}) {
                     key={category}
                     type="button"
                     className={`filter-chip ${selectedCategory === category ? 'filter-chip-active' : ''}`}
-                    onClick={() => setSelectedCategory(category)}
+                    onClick={() => updateCategory(category)}
                     aria-pressed={selectedCategory === category}
                   >
                     {category === 'ALL' ? 'All Opportunities' : displayValue(category)}
@@ -1105,8 +1116,8 @@ export default function App({ eligibilityInput = null } = {}) {
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('ALL');
+                  updateSearchQuery('');
+                  updateCategory('ALL');
                 }}
               >
                 Clear All Filters
@@ -1116,8 +1127,8 @@ export default function App({ eligibilityInput = null } = {}) {
 
           {/* Opportunity Cards Grid */}
           {!isLoading && filteredOpportunities.length > 0 && (
-            <div className="opportunities-grid">
-              {filteredOpportunities.map((opportunity) => {
+            <div className="opportunities-grid" id="opportunities-grid">
+              {visibleOpportunities.map((opportunity) => {
                 const deadlineEvaluation = evaluateDeadline(opportunity.deadline);
                 const prereqList = opportunity.eligibility_conditions;
 
@@ -1261,6 +1272,14 @@ export default function App({ eligibilityInput = null } = {}) {
                   </article>
                 );
               })}
+            </div>
+          )}
+          {!isLoading && visibleOpportunities.length < filteredOpportunities.length && (
+            <div className="load-more-actions">
+              <button type="button" className="btn btn-outline" aria-controls="opportunities-grid"
+                onClick={() => setVisibleCount((count) => count + OPPORTUNITIES_PER_BATCH)}>
+                Load More Opportunities
+              </button>
             </div>
           )}
         </section>

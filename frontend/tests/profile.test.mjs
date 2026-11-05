@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { harness, renderInitialApp } from './helpers/app-harness.mjs';
+import { harness, renderInitialApp, loadAllOpportunities } from './helpers/app-harness.mjs';
 
 const mapping = readFileSync(new URL('../../data/PROFILE_MAPPING.md', import.meta.url), 'utf8');
 
@@ -81,6 +81,7 @@ test('skills and agencies support selection, custom text and removal as string a
 test('cards, filters, pathway editing and approval run without local eligibility inference', async () => {
   const ui = harness();
   await ui.button('Check API Status').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.equal(ui.nodes().filter((node) => node.type === 'article').length, 30);
   for (const answer of ['yes', 'no', 'prefer_not_to_say', 'not_stated']) {
     ui.change('identity_answer', answer);

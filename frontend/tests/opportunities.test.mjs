@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline } from '../src/opportunityData.js';
-import { harness } from './helpers/app-harness.mjs';
+import { harness, loadAllOpportunities } from './helpers/app-harness.mjs';
 
 const dataset = JSON.parse(readFileSync(new URL('../../data/opportunities.json', import.meta.url), 'utf8'));
 const records = dataset.opportunities;
@@ -22,9 +22,13 @@ test('local fallback loads all 30 original records without renumbering or mutati
   const original = JSON.stringify(dataset);
   assert.strictEqual(readOpportunities(dataset), records);
   const ui = harness();
+  loadAllOpportunities(ui);
   assert.equal(cards(ui).length, 30);
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), records.map((record) => record.id));
+  loadAllOpportunities(ui);
   assert.ok(ids(ui).includes('OPP-032'));
+  loadAllOpportunities(ui);
   assert.ok(!ids(ui).includes('OPP-018'));
   assert.match(ui.markup(), /Development fallback: data\/opportunities.json/);
   assert.ok(ui.markup().includes(dataset.dataset_note));
@@ -33,6 +37,7 @@ test('local fallback loads all 30 original records without renumbering or mutati
 
 test('all published card fields, 81 nested conditions, evidence and sources render intact', () => {
   const ui = harness();
+  loadAllOpportunities(ui);
   for (const record of records) {
     const card = cards(ui).find((node) => node.props['data-opportunity-id'] === record.id);
     const content = ui.text(card);
@@ -66,6 +71,7 @@ test('all nine documented categories have working filters, including categories 
   const ui = harness();
   for (const category of OPPORTUNITY_CATEGORIES) {
     ui.button(category.replaceAll('_', ' ')).props.onClick(); ui.render();
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), records.filter((record) => record.category === category).map((record) => record.id));
   }
   // API fixtures reuse source records; no fixture is added to the actual dataset.
@@ -74,6 +80,7 @@ test('all nine documented categories have working filters, including categories 
   await refresh(apiUi);
   for (const [index, category] of OPPORTUNITY_CATEGORIES.entries()) {
     apiUi.button(category.replaceAll('_', ' ')).props.onClick(); apiUi.render();
+    loadAllOpportunities(apiUi);
     assert.deepEqual(ids(apiUi), [everyCategory[index].id]);
   }
 });
@@ -81,10 +88,13 @@ test('all nine documented categories have working filters, including categories 
 test('search handles original IDs, skills, location and combined category filters', () => {
   const ui = harness();
   ui.change('searchQuery', ' opp-032 ');
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), ['OPP-032']);
   ui.button('internship').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.deepEqual(ids(ui), []);
   ui.button('Clear All Filters').props.onClick(); ui.render();
+  loadAllOpportunities(ui);
   assert.equal(cards(ui).length, 30);
   ui.change('searchQuery', 'cybernetics');
   assert.ok(cards(ui).length > 0);
@@ -126,6 +136,7 @@ test('API envelope, legacy array and valid empty responses are accepted', async 
     } });
     await refresh(ui);
     assert.equal(requestedUrl, 'http://127.0.0.1:8000/api/opportunities');
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), readOpportunities(payload).map((record) => record.id));
     assert.match(ui.markup(), /Source: FastAPI opportunity API/);
     assert.doesNotMatch(ui.markup(), /Development fallback: data\/opportunities.json/);
@@ -147,6 +158,7 @@ test('invalid responses, HTTP failures, invalid JSON and network errors use labe
   for (const fetchImpl of failures) {
     const ui = harness({ fetchImpl });
     await refresh(ui);
+    loadAllOpportunities(ui);
     assert.deepEqual(ids(ui), records.map((record) => record.id));
     assert.match(ui.markup(), /Development fallback: data\/opportunities.json/);
     assert.match(ui.markup(), /Opportunity API unavailable or returned invalid data/);

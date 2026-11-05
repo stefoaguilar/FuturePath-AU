@@ -12,6 +12,15 @@ const code = buildSync({
   bundle: true, write: false, format: 'cjs', platform: 'node', external: ['react']
 }).outputFiles[0].text;
 
+// Dataset/eligibility regressions inspect the full list through the public UI.
+export function loadAllOpportunities(ui) {
+  let button;
+  while ((button = ui.nodes().find((node) => node.type === 'button' && ui.text(node) === 'Load More Opportunities'))) {
+    button.props.onClick();
+    ui.render();
+  }
+}
+
 export function renderInitialApp(props = {}) {
   const module = { exports: {} };
   runInNewContext(code, { module, exports: module.exports, require, URL });
