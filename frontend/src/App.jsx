@@ -182,126 +182,53 @@ function evaluateDeadline(deadlineStr) {
   };
 }
 
-// [HAK-04] Deterministic Fact-Grounded Eligibility Evaluator
-// STRICT SAFEGUARD: Never guess, hallucinate, or score suitability using Indigenous identity.
-// Evaluates strictly published criteria against student-provided qualification and skills.
-function evaluatePrerequisite(prerequisiteText, userProfile) {
-  const text = prerequisiteText.toLowerCase();
-  const userDegree = (userProfile.degree || '').toLowerCase();
-  const userSkills = (userProfile.skills || []).map((s) => s.toLowerCase().trim()).filter(Boolean);
-
-  // Category 1: External Documentation / Legal Status / Clearance Requirements
-  // Incomplete from self-profile alone -> deterministic "Uncertain (Verification Required)"
-  const externalProofKeywords = [
-    'citizenship',
-    'permanent residency',
-    'clearance',
-    'nv1',
-    'baseline',
-    'security clearance',
-    'distinction average',
-    'gpa',
-    'enrolled in',
-    'enrolment',
-    'tertiary',
-    'year 12',
-    'commitment',
-    'passion',
-    'curiosity'
-  ];
-
-  const hasExternalRequirement = externalProofKeywords.some((kw) => text.includes(kw));
-
-  // Category 2: Degree / Educational Matches
-  const degreeKeywords = ['degree', 'bachelor', 'undergraduate', 'diploma', 'certificate', 'tafe', 'stem', 'it', 'computer science', 'software'];
-  let degreeMatched = false;
-  let matchedDegreeTerm = '';
-
-  if (userDegree) {
-    for (const kw of degreeKeywords) {
-      if (text.includes(kw) && userDegree.includes(kw)) {
-        degreeMatched = true;
-        matchedDegreeTerm = kw;
-        break;
-      }
-    }
-  }
-
-  // Category 3: Explicit Technical Skills Matches
-  const matchedSkills = [];
-  userSkills.forEach((skill) => {
-    if (skill.length > 1 && text.includes(skill)) {
-      matchedSkills.push(skill);
-    }
-  });
-
-  // Evaluate deterministic outcome
-  if (matchedSkills.length > 0) {
-    return {
-      status: 'satisfied',
-      badgeClass: 'badge-satisfied',
-      label: 'Satisfied',
-      reason: `Matches declared profile skill: "${matchedSkills.join(', ')}"`
-    };
-  }
-
-  if (degreeMatched) {
-    return {
-      status: 'satisfied',
-      badgeClass: 'badge-satisfied',
-      label: 'Satisfied',
-      reason: `Matches declared qualification: "${userProfile.degree}"`
-    };
-  }
-
-  if (hasExternalRequirement) {
-    return {
-      status: 'uncertain',
-      badgeClass: 'badge-uncertain',
-      label: 'Uncertain (Verification Required)',
-      reason: 'Requires external documentation or provider vetting (e.g., citizenship proof, official transcripts, security clearance).'
-    };
-  }
-
-  // Specific technical requirement present that user does NOT have
-  const technicalKeywords = [
-    'python',
-    'linux',
-    'networking',
-    'siem',
-    'wireshark',
-    'packet analysis',
-    'cloud',
-    'c++',
-    'data analysis',
-    'scripting',
-    'packet',
-    'aws',
-    'command line'
-  ];
-
-  const missingTech = technicalKeywords.find((tk) => text.includes(tk) && !userSkills.includes(tk));
-
-  if (missingTech) {
-    return {
-      status: 'unmet',
-      badgeClass: 'badge-unmet',
-      label: 'Unmet',
-      reason: `Published requirement specifies "${missingTech}" which is missing from current profile skills.`
-    };
-  }
-
-  // Fallback for general unverified requirements
+// Eligibility decisions belong to FastAPI. The current opportunity fetch does not
+// return profile-specific evaluations; never infer results from prerequisite text.
+function evaluatePrerequisite() {
   return {
-    status: 'uncertain',
-    badgeClass: 'badge-uncertain',
-    label: 'Uncertain (Verification Required)',
-    reason: 'Published requirement cannot be deterministically verified from declared profile; manual portfolio check required.'
+    status: 'not_yet_evaluated',
+    badgeClass: 'badge-passed',
+    label: 'Not yet evaluated',
+    reason: 'Awaiting backend eligibility evaluation. Missing information remains uncertain; identity conditions require voluntary student confirmation.'
   };
 }
 
+const initialProfile = {
+  education_level: 'not_stated',
+  enrolment_status: 'not_stated',
+  institution: '',
+  citizenship_status: 'not_stated',
+  state: 'not_stated',
+  field_of_study: '',
+  weighted_average: null,
+  skills: [],
+  experience_notes: '',
+  preferred_agencies: [],
+  identity_answer: 'not_stated'
+};
+
+const PROFILE_OPTIONS = {
+  education_level: ['undergraduate', 'postgraduate', 'vocational', 'school_leaver', 'graduate', 'not_stated'],
+  enrolment_status: ['enrolled_full_time', 'enrolled_part_time', 'commencing', 'not_enrolled', 'not_stated'],
+  citizenship_status: ['australian_citizen', 'permanent_resident', 'nz_citizen', 'other', 'not_stated'],
+  state: ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA', 'not_stated'],
+  identity_answer: ['yes', 'no', 'prefer_not_to_say', 'not_stated']
+};
+
+const PROFILE_LABELS = {
+  education_level: 'Education Level',
+  enrolment_status: 'Enrolment Status',
+  citizenship_status: 'Citizenship Status',
+  state: 'State',
+  identity_answer: 'Aboriginal and/or Torres Strait Islander Identity (voluntary)'
+};
+
 // Curated catalog of standard cybersecurity skills for [HAK-02] dropdown selector
 const CYBER_SKILLS_CATALOG = [
+  {
+    category: 'Agreed Profile Skill Tags',
+    skills: ['cyber security', 'technology', 'ICT', 'software engineering', 'digital', 'STEM', 'data', 'digital delivery', 'computing', 'data science', 'networking', 'cybernetics']
+  },
   {
     category: 'Core Cyber Security & Analysis',
     skills: [
@@ -459,45 +386,43 @@ export default function App() {
   // ---------------------------------------------------------------------------
   // [HAK-02] State: Student Profile & Goal Form
   // ---------------------------------------------------------------------------
-  const [profile, setProfile] = useState({
-    careerGoal: 'SOC Analyst (Level 1 / Tier 1 Incident Responder)',
-    degree: 'Bachelor of Information Technology'
-  });
-
-  // Selected skills state managed via dropdown and interactive tags
-  const [selectedSkills, setSelectedSkills] = useState([
-    'Networking',
-    'Linux',
-    'Python',
-    'Wireshark',
-    'SIEM Basics'
-  ]);
-
+  const [profile, setProfile] = useState(initialProfile);
+  const [careerGoal, setCareerGoal] = useState(
+    'SOC Analyst (Level 1 / Tier 1 Incident Responder)'
+  );
+  const [customSkill, setCustomSkill] = useState('');
+  const [customAgency, setCustomAgency] = useState('');
+  const [agencyOptions, setAgencyOptions] = useState(['Defence']);
+  const [weightedAverageInvalid, setWeightedAverageInvalid] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [profileSubmitted, setProfileSubmitted] = useState(true);
+  const [profileSubmitted, setProfileSubmitted] = useState(false);
 
-  const activeUserProfile = useMemo(() => {
-    return {
-      careerGoal: profile.careerGoal,
-      degree: profile.degree,
-      skills: selectedSkills
-    };
-  }, [profile.careerGoal, profile.degree, selectedSkills]);
+  // Explicit allowlist prevents frontend-only state from entering eligibility data.
+  const activeUserProfile = useMemo(() => Object.fromEntries(
+    Object.keys(initialProfile).map((field) => [field, profile[field]])
+  ), [profile]);
+  const selectedSkills = profile.skills;
 
-  // Skill Dropdown selection handlers
-  const handleSkillSelect = (e) => {
-    const chosen = e.target.value;
-    if (chosen && !selectedSkills.includes(chosen)) {
-      setSelectedSkills((prev) => [...prev, chosen]);
-      if (formErrors.skills) {
-        setFormErrors((prev) => ({ ...prev, skills: null }));
-      }
+  const updateProfileField = (field, value) => {
+    setProfile((prev) => ({ ...prev, [field]: value }));
+    setProfileSubmitted(false);
+    setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const addSkill = (value) => {
+    const skill = value.trim();
+    if (skill && !selectedSkills.includes(skill)) {
+      updateProfileField('skills', [...selectedSkills, skill]);
     }
+  };
+
+  const handleSkillSelect = (e) => {
+    addSkill(e.target.value);
     e.target.value = '';
   };
 
   const handleRemoveSkill = (skillToRemove) => {
-    setSelectedSkills((prev) => prev.filter((s) => s !== skillToRemove));
+    updateProfileField('skills', selectedSkills.filter((skill) => skill !== skillToRemove));
   };
 
   // ---------------------------------------------------------------------------
@@ -626,14 +551,12 @@ export default function App() {
     e.preventDefault();
     const errors = {};
 
-    if (!profile.careerGoal.trim()) {
+    if (!careerGoal.trim()) {
       errors.careerGoal = 'Please specify your Cybersecurity Career Goal.';
     }
-    if (!profile.degree.trim()) {
-      errors.degree = 'Please provide your Current Qualification or Degree.';
-    }
-    if (selectedSkills.length === 0) {
-      errors.skills = 'Please select at least one current skill from the dropdown.';
+    if (weightedAverageInvalid || (activeUserProfile.weighted_average !== null &&
+        !Number.isFinite(activeUserProfile.weighted_average))) {
+      errors.weighted_average = 'Enter a valid finite number, or leave weighted average blank.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -677,20 +600,13 @@ export default function App() {
 
     setSelectedOpportunityForPathway(opportunity);
 
-    // Identify gaps to build smart, tailored steps
-    const prereqs = normalizePrerequisites(opportunity.prerequisites);
-    const gaps = prereqs
-      .map((p) => ({ text: p, eval: evaluatePrerequisite(p, activeUserProfile) }))
-      .filter((item) => item.eval.status === 'unmet');
-
-    const gapNames = gaps.map((g) => g.text).join(' & ');
-
+    // Generate editable preparation guidance without inferring eligibility gaps.
     const newMilestones = [
       {
         id: `step-${Date.now()}-1`,
         phase: 'Milestone 1: Prerequisite Study & Gap Bridging',
-        title: gapNames ? `Bridging Study: Address Published Requirements (${gapNames.substring(0, 50)}...)` : 'Reinforce Foundational Technical Skills',
-        description: `Complete targeted online modules, lab work, or coursework to bridge prerequisites for ${opportunity.title}.`,
+        title: 'Review Published Requirements & Plan Foundational Study',
+        description: `Review the published prerequisites for ${opportunity.title} and choose relevant study or lab work. Eligibility has not yet been evaluated by the backend.`,
         timeline: 'Weeks 1 - 4',
         status: 'pending',
         actionableUrl: ''
@@ -963,12 +879,12 @@ export default function App() {
               <span className="section-step-tag">[HAK-02] Student Profile</span>
               <h2 id="profile-heading">Cybersecurity Career Goal &amp; Background Profile</h2>
             </div>
-            {profileSubmitted && Object.keys(formErrors).length === 0 && (
-              <span className="badge badge-satisfied">Profile Active &amp; Validated</span>
-            )}
+            <span role="status" className={`badge ${profileSubmitted ? 'badge-satisfied' : 'badge-draft'}`}>
+              {profileSubmitted ? 'Profile inputs validated' : 'Profile draft: validation pending'}
+            </span>
           </div>
           <p className="section-description">
-            Define your cybersecurity aspirations and existing background. Our deterministic engine compares published source prerequisites directly against your profile to identify skill gaps without algorithmic guessing.
+            Define your cybersecurity aspirations and background. Only the career goal is required. Blank or not stated answers mean information is unavailable. Profile validation checks input format; eligibility evaluation belongs to the backend.
           </p>
 
           <form onSubmit={handleProfileSubmit} noValidate className="profile-form">
@@ -982,8 +898,9 @@ export default function App() {
                   id="careerGoal"
                   type="text"
                   className={`form-input ${formErrors.careerGoal ? 'input-error' : ''}`}
-                  value={profile.careerGoal}
-                  onChange={(e) => setProfile({ ...profile, careerGoal: e.target.value })}
+                  value={careerGoal}
+                  onChange={(e) => { setCareerGoal(e.target.value); setProfileSubmitted(false); }}
+                  required
                   placeholder="e.g., SOC Analyst, Incident Responder, Cloud Security Engineer"
                   aria-invalid={!!formErrors.careerGoal}
                   aria-describedby={formErrors.careerGoal ? 'careerGoal-error' : 'careerGoal-help'}
@@ -999,37 +916,85 @@ export default function App() {
                 )}
               </div>
 
-              {/* Current Qualification / Degree */}
+              {Object.entries(PROFILE_OPTIONS).map(([field, options]) => (
+                <div className="form-group" key={field}>
+                  <label htmlFor={field} className="form-label">{PROFILE_LABELS[field]}</label>
+                  <select id={field} name={field} className="form-input" value={profile[field]}
+                    onChange={(e) => updateProfileField(field, e.target.value)}
+                    aria-describedby={field === 'identity_answer' ? 'identity-help' : undefined}>
+                    {options.map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'not_stated' ? 'Not stated' : option.replaceAll('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
+                  {field === 'identity_answer' && (
+                    <span id="identity-help" className="form-help">Answering is voluntary. This is your own answer; identity is never inferred or scored, and identity conditions are never automatically evaluated.</span>
+                  )}
+                </div>
+              ))}
+              {['institution', 'field_of_study'].map((field) => (
+                <div className="form-group" key={field}>
+                  <label htmlFor={field} className="form-label">{field === 'institution' ? 'Institution' : 'Field of Study'}</label>
+                  <input id={field} name={field} type="text" className="form-input" value={profile[field]}
+                    placeholder={field === 'institution' ? 'e.g., Curtin University' : 'e.g., Cyber Security or Information Technology'}
+                    onChange={(e) => updateProfileField(field, e.target.value)} />
+                </div>
+              ))}
               <div className="form-group">
-                <label htmlFor="degree" className="form-label">
-                  Current Qualification / Degree <span className="req">*</span>
-                </label>
-                <input
-                  id="degree"
-                  type="text"
-                  className={`form-input ${formErrors.degree ? 'input-error' : ''}`}
-                  value={profile.degree}
-                  onChange={(e) => setProfile({ ...profile, degree: e.target.value })}
-                  placeholder="e.g., Bachelor of Information Technology, Diploma in Cyber Security"
-                  aria-invalid={!!formErrors.degree}
-                  aria-describedby={formErrors.degree ? 'degree-error' : 'degree-help'}
-                />
-                {formErrors.degree ? (
-                  <span id="degree-error" className="error-message">
-                    {formErrors.degree}
-                  </span>
-                ) : (
-                  <span id="degree-help" className="form-help">
-                    Current university degree, TAFE diploma, or completed schooling.
-                  </span>
-                )}
+                <label htmlFor="weighted_average" className="form-label">Weighted Average (optional)</label>
+                <input id="weighted_average" name="weighted_average" type="number" step="any"
+                  className={`form-input ${formErrors.weighted_average ? 'input-error' : ''}`}
+                  value={profile.weighted_average ?? ''}
+                  onChange={(e) => {
+                    setWeightedAverageInvalid(e.target.validity.badInput);
+                    updateProfileField('weighted_average', e.target.value === '' ? null : e.target.valueAsNumber);
+                  }}
+                  aria-invalid={!!formErrors.weighted_average}
+                  aria-describedby="weighted-average-help weighted-average-error" />
+                <span id="weighted-average-help" className="form-help">Leave blank if unavailable or you prefer not to provide it. No eligibility threshold is applied here.</span>
+                <span id="weighted-average-error" className="error-message" role="alert">{formErrors.weighted_average}</span>
               </div>
             </div>
+
+            <div className="form-group">
+              <label htmlFor="experience_notes" className="form-label">Experience Notes (optional)</label>
+              <textarea id="experience_notes" name="experience_notes" rows={3} className="form-input"
+                value={profile.experience_notes} onChange={(e) => updateProfileField('experience_notes', e.target.value)} />
+            </div>
+
+            <fieldset className="form-group agency-selection">
+              <legend className="form-label">Preferred Agencies (optional)</legend>
+              <p id="agency-help" className="form-help">Add an agency by name, then select or clear its checkbox. You can leave all agencies unselected.</p>
+              <div className="form-actions">
+                <label htmlFor="customAgency" className="sr-only">Agency name</label>
+                <input id="customAgency" className="form-input" value={customAgency} aria-describedby="agency-help"
+                  onChange={(e) => setCustomAgency(e.target.value)} placeholder="e.g., Defence" />
+                <button type="button" className="btn btn-outline" disabled={!customAgency.trim()}
+                  onClick={() => {
+                    const agency = customAgency.trim();
+                    setAgencyOptions((prev) => prev.includes(agency) ? prev : [...prev, agency]);
+                    if (!profile.preferred_agencies.includes(agency)) {
+                      updateProfileField('preferred_agencies', [...profile.preferred_agencies, agency]);
+                    }
+                    setCustomAgency('');
+                  }}>Add Agency</button>
+              </div>
+              {agencyOptions.map((agency) => (
+                <label key={agency} className="agency-option">
+                  <input type="checkbox" checked={profile.preferred_agencies.includes(agency)}
+                    onChange={(e) => updateProfileField('preferred_agencies', e.target.checked
+                      ? [...profile.preferred_agencies, agency]
+                      : profile.preferred_agencies.filter((value) => value !== agency))} />
+                  {agency}
+                </label>
+              ))}
+            </fieldset>
 
             {/* [HAK-02] Current Skills Dropdown Selection */}
             <div className="form-group">
               <label htmlFor="skillsDropdown" className="form-label">
-                Current Skills (Select from Dropdown) <span className="req">*</span>
+                Current Skills (optional)
               </label>
 
               <div className="skills-dropdown-container">
@@ -1069,6 +1034,13 @@ export default function App() {
                   </span>
                 )}
 
+                <label htmlFor="customSkill" className="form-label">Add Your Own Skill</label>
+                <div className="form-actions">
+                  <input id="customSkill" className="form-input" value={customSkill}
+                    onChange={(e) => setCustomSkill(e.target.value)} placeholder="Enter a skill in your own words" />
+                  <button type="button" className="btn btn-outline" disabled={!customSkill.trim()}
+                    onClick={() => { addSkill(customSkill); setCustomSkill(''); }}>Add Skill</button>
+                </div>
                 {/* Selected Skills Tags Container */}
                 <div className="skill-tags-preview" aria-label="Selected skills tags">
                   <div className="tags-header-row">
@@ -1077,7 +1049,7 @@ export default function App() {
                       <button
                         type="button"
                         className="clear-skills-link"
-                        onClick={() => setSelectedSkills([])}
+                        onClick={() => updateProfileField('skills', [])}
                         title="Clear all selected skills"
                       >
                         Clear All
@@ -1111,17 +1083,16 @@ export default function App() {
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
-                Update &amp; Re-evaluate Eligibility
+                Validate Profile Inputs
               </button>
               <button
                 type="button"
                 className="btn btn-outline"
                 onClick={() => {
-                  setProfile({
-                    careerGoal: 'Incident Responder / Digital Forensics',
-                    degree: 'Diploma of Information Technology'
-                  });
-                  setSelectedSkills(['Networking', 'Linux', 'Wireshark']);
+                  setProfile({ ...initialProfile, education_level: 'vocational', field_of_study: 'Information Technology', skills: ['networking', 'Linux', 'Wireshark'] });
+                  setCareerGoal('Incident Responder / Digital Forensics');
+                  setWeightedAverageInvalid(false);
+                  setProfileSubmitted(false);
                   setFormErrors({});
                 }}
               >
@@ -1146,7 +1117,7 @@ export default function App() {
           </div>
 
           <p className="section-description">
-            Explore authentic, source-grounded cyber traineeships, cadetships, scholarships, and mentorships. Each prerequisite is deterministically tagged as <strong>Satisfied</strong> (green), <strong>Unmet</strong> (red), or <strong>Uncertain</strong> (amber). No AI hallucination or identity inference is permitted.
+            Explore authentic, source-grounded cyber traineeships, cadetships, scholarships, and mentorships. Backend eligibility outcomes are <strong>Satisfied</strong>, <strong>Unmet</strong>, or <strong>Uncertain</strong>. Until a backend result is available for your profile, prerequisites are <strong>Not yet evaluated</strong>. Missing information never means satisfied or unmet; identity conditions are never automatically evaluated.
           </p>
 
           {/* Search and Filters Bar */}
@@ -1230,12 +1201,13 @@ export default function App() {
                 // Calculate eligibility stats
                 const evaluatedPrereqs = prereqList.map((prereq) => ({
                   text: prereq,
-                  evaluation: evaluatePrerequisite(prereq, activeUserProfile)
+                  evaluation: evaluatePrerequisite()
                 }));
 
                 const satisfiedCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'satisfied').length;
                 const unmetCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'unmet').length;
                 const uncertainCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'uncertain').length;
+                const pendingCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'not_yet_evaluated').length;
 
                 return (
                   <article key={opportunity.id} className="opportunity-card" aria-labelledby={`opp-title-${opportunity.id}`}>
@@ -1263,12 +1235,13 @@ export default function App() {
                           <span className="summary-pill pill-green" title="Prerequisites satisfied by your profile">
                             {satisfiedCount} Satisfied
                           </span>
-                          <span className="summary-pill pill-red" title="Prerequisites missing from your profile">
+                          <span className="summary-pill pill-red" title="Prerequisites confirmed unmet by the backend">
                             {unmetCount} Unmet
                           </span>
                           <span className="summary-pill pill-amber" title="Requires external validation or clearance documentation">
                             {uncertainCount} Uncertain
                           </span>
+                          <span className="summary-pill badge-passed">{pendingCount} Not yet evaluated</span>
                         </div>
                       </div>
 

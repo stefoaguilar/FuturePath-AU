@@ -389,6 +389,29 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+}
+
+.agency-selection {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.agency-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.profile-form textarea {
+  resize: vertical;
+}
+
+.profile-form .form-actions .form-input {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .form-label {
@@ -793,6 +816,7 @@ body {
 .eligibility-score-pills {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .summary-pill {
