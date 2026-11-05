@@ -104,16 +104,16 @@ test('all four deadline statuses use only the fixed demo reference date', () => 
   assert.match(soon.displayDate, /2 days left/);
   const past = evaluateDeadline({ status: 'date', date: '2026-11-27' });
   assert.equal(past.status, 'past');
-  assert.equal(past.canApplyNow, false);
+  assert.equal(past.badgeClass, 'badge-deadline-past');
   assert.equal(evaluateDeadline({ status: 'date', date: '2027-02-26' }).status, 'future');
   const closed = evaluateDeadline({ status: 'closed', date: '2026-03-30' });
-  assert.equal(closed.canApplyNow, false);
+  assert.equal(closed.badgeClass, 'badge-deadline-closed');
   assert.match(closed.displayDate, /Previous closing date: 30 Mar 2026/);
   assert.match(evaluateDeadline({ status: 'closed', date: null }).displayDate, /not published/);
   assert.equal(evaluateDeadline({ status: 'rolling', date: null }).label, 'Open all year');
   const unknown = evaluateDeadline({ status: 'unknown', date: null });
   assert.equal(unknown.label, 'Deadline unknown');
-  assert.equal(unknown.canApplyNow, false);
+  assert.equal(unknown.badgeClass, 'badge-deadline-unknown');
 });
 
 test('API envelope, legacy array and valid empty responses are accepted', async () => {
@@ -188,11 +188,11 @@ test('synthetic API fixtures are clearly labelled and never described as verifie
 
 test('closed, unknown, future and rolling pathways retain editing/approval without fabricated dates', async () => {
   const fixtures = [
-    { record: records.find((r) => r.deadline.status === 'closed'), expected: /Watch for the Next Round/, timeline: /Next opening date not announced/ },
+    { record: records.find((r) => r.deadline.status === 'closed'), expected: /Watch for the Next Round/, timeline: /Next-round dates: check official source/ },
     { record: records.find((r) => r.deadline.status === 'unknown'), expected: /Check Application Dates/, timeline: /Application dates to be confirmed/ },
-    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date >= DEMO_REFERENCE_DATE), expected: /Submit Direct Application/, timeline: /Before deadline/ },
-    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date < DEMO_REFERENCE_DATE), expected: /Watch for the Next Round/, timeline: /Next opening date not announced/ },
-    { record: { ...records[0], deadline: { status: 'rolling', date: null } }, expected: /Submit Direct Application/, timeline: /Open all year/ }
+    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date >= DEMO_REFERENCE_DATE), expected: /Check Application Availability/, timeline: /Published closing date/ },
+    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date < DEMO_REFERENCE_DATE), expected: /Watch for the Next Round/, timeline: /Next-round dates: check official source/ },
+    { record: { ...records[0], deadline: { status: 'rolling', date: null } }, expected: /Check Application Availability/, timeline: /Open all year/ }
   ];
   for (const { record, expected, timeline } of fixtures) {
     const ui = harness({ fetchImpl: response({ opportunities: [record] }) });

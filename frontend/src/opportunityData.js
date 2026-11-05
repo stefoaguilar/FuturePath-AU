@@ -78,30 +78,31 @@ export function formatDate(value) {
   });
 }
 
-// Fixed demo date, UTC date-only arithmetic; independent of system date/timezone.
+// Deadline presentation only, never confirmation of application availability or
+// student eligibility. Fixed demo date and UTC arithmetic ignore the system clock.
 export function evaluateDeadline(deadline) {
   if (deadline.status === 'rolling') return {
     status: 'rolling', label: 'Open all year', displayDate: 'Open all year',
-    badgeClass: 'badge-rolling', canApplyNow: true
+    badgeClass: 'badge-rolling'
   };
   if (deadline.status === 'unknown') return {
     status: 'unknown', label: 'Deadline unknown', displayDate: 'Deadline unknown',
-    badgeClass: 'badge-passed', canApplyNow: false
+    badgeClass: 'badge-deadline-unknown'
   };
   if (deadline.status === 'closed') return {
     status: 'past', label: 'Closed round',
     displayDate: deadline.date ? `Previous closing date: ${formatDate(deadline.date)}` : 'Closed round; previous closing date not published',
-    badgeClass: 'badge-passed', canApplyNow: false
+    badgeClass: 'badge-deadline-closed'
   };
   const days = Math.round((Date.parse(deadline.date) - Date.parse(DEMO_REFERENCE_DATE)) / 86400000);
   if (days < 0) return {
-    status: 'past', label: 'Closing date passed', displayDate: `Closing date passed: ${formatDate(deadline.date)}`,
-    badgeClass: 'badge-passed', canApplyNow: false
+    status: 'past', label: 'Past deadline', displayDate: `Closing date elapsed: ${formatDate(deadline.date)}`,
+    badgeClass: 'badge-deadline-past'
   };
   return {
     status: 'future', label: days <= 7 ? 'Closing soon' : 'Future deadline',
-    displayDate: `${formatDate(deadline.date)} (${days === 0 ? 'Closes today' : `${days} days left`})`,
-    badgeClass: 'badge-upcoming', canApplyNow: true
+    displayDate: `${formatDate(deadline.date)} (${days === 0 ? 'Closes today' : `${days} day${days === 1 ? '' : 's'} left`})`,
+    badgeClass: 'badge-upcoming'
   };
 }
 

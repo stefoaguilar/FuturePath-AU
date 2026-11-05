@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import localOpportunityDataset from '../../data/opportunities.json';
 import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
 import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
@@ -266,6 +266,7 @@ export default function App({ eligibilityInput = null } = {}) {
   const [apiError, setApiError] = useState(null);
   const [backendDataSource, setBackendDataSource] = useState('local-development');
   const [datasetNote, setDatasetNote] = useState(localOpportunityDataset.dataset_note);
+  const opportunityRequest = useRef(null);
 
   const eligibility = useMemo(() => {
     if (apiError || eligibilityInput?.unavailable) return emptyEligibility();
@@ -342,40 +343,75 @@ export default function App({ eligibilityInput = null } = {}) {
   // [HAK-03 & HAK-06] Fetch from FastAPI Backend with Fallback
   // ---------------------------------------------------------------------------
   const fetchOpportunitiesFromBackend = async () => {
+    const previous = opportunityRequest.current;
+    const request = { controller: new AbortController(), timeoutId: null, timedOut: false };
+    opportunityRequest.current = request;
+    if (previous) {
+      clearTimeout(previous.timeoutId);
+      previous.controller.abort();
+    }
+    const isCurrent = () => opportunityRequest.current === request;
     setIsLoading(true);
     setApiError(null);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    request.timeoutId = setTimeout(() => {
+      request.timedOut = true;
+      request.controller.abort();
+    }, 3500);
+    let failureKind = 'network';
     try {
       const response = await fetch('http://127.0.0.1:8000/api/opportunities', {
-        signal: controller.signal
+        signal: request.controller.signal
       });
+      if (!isCurrent()) return;
+      if (request.timedOut) throw new Error('timeout');
       if (!response.ok) {
-        throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        failureKind = 'http';
+        throw new Error('http');
       }
+      failureKind = 'invalid';
       const data = await response.json();
+      if (!isCurrent()) return;
+      if (request.timedOut) throw new Error('timeout');
       const items = readOpportunities(data);
       // A valid empty API list remains empty; it is not a connection failure.
       setOpportunities(items);
       setDatasetNote(Array.isArray(data) ? '' : data.dataset_note || '');
       setBackendDataSource('live-fastapi');
-    } catch (err) {
-      console.warn('FastAPI opportunity request failed:', err.message);
+    } catch {
+      if (!isCurrent()) return;
+      const messages = {
+        network: 'Could not connect to the opportunity service. Check the connection and try again.',
+        timeout: 'The opportunity service took too long to respond. Please try again.',
+        http: 'The opportunity service returned an unsuccessful response. Please try again later.',
+        invalid: 'The opportunity service returned data that could not be used safely. Please try again later.'
+      };
       setApiError(
-        `Opportunity API unavailable or returned invalid data (${err.message}). ` +
-        'Using the local JSON development fallback. The current backend implements only / and /health; /api/opportunities is pending.'
+        'Opportunity API unavailable or returned invalid data. ' +
+        messages[request.timedOut ? 'timeout' : failureKind] +
+        ' Using the local JSON development fallback; live opportunity updates are unavailable.'
       );
       setOpportunities(LOCAL_OPPORTUNITIES);
       setDatasetNote(localOpportunityDataset.dataset_note);
       setBackendDataSource('local-development');
     } finally {
-      clearTimeout(timeoutId);
-      setIsLoading(false);
+      clearTimeout(request.timeoutId);
+      if (isCurrent()) {
+        opportunityRequest.current = null;
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchOpportunitiesFromBackend();
+    return () => {
+      const request = opportunityRequest.current;
+      opportunityRequest.current = null;
+      if (request) {
+        clearTimeout(request.timeoutId);
+        request.controller.abort();
+      }
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -438,7 +474,7 @@ export default function App({ eligibilityInput = null } = {}) {
       ? {
           title: `Watch for the Next Round at ${opportunity.provider}`,
           description: `This round has closed or its closing date has passed. Check ${opportunity.source_url} for provider announcements; no next opening date is assumed.`,
-          timeline: 'Next opening date not announced'
+          timeline: 'Next-round dates: check official source'
         }
       : deadline.status === 'unknown'
         ? {
@@ -447,9 +483,9 @@ export default function App({ eligibilityInput = null } = {}) {
             timeline: 'Application dates to be confirmed'
           }
         : {
-            title: `Submit Direct Application to ${opportunity.provider}`,
-            description: `Review the published requirements and submit directly via ${opportunity.source_url}. Applications are never submitted automatically.`,
-            timeline: deadline.status === 'rolling' ? 'Open all year' : `Before deadline (${formatDate(opportunity.deadline.date)})`
+            title: `Check Application Availability with ${opportunity.provider}`,
+            description: `Check ${opportunity.source_url} to confirm current application availability and review the published requirements. If the provider is accepting applications, any submission must be student-initiated. A deadline does not confirm eligibility.`,
+            timeline: deadline.status === 'rolling' ? 'Open all year (published; check source)' : `Published closing date (${formatDate(opportunity.deadline.date)})`
           };
 
     // Generate editable preparation guidance without inferring eligibility gaps.
@@ -973,6 +1009,7 @@ export default function App({ eligibilityInput = null } = {}) {
           <aside className="dataset-notice" role="note" aria-label="Opportunity data source">
             <strong>{backendDataSource === 'live-fastapi' ? 'Source: FastAPI opportunity API' : 'Development fallback: data/opportunities.json (bundled local copy)'}</strong>
             <p>Demo reference date: 28 November 2026 ({DEMO_REFERENCE_DATE}). Closed and past rounds remain visible for research and planning.</p>
+            <p>Deadline information does not confirm that applications are currently open or that you meet eligibility requirements. Check the official source before applying.</p>
             {datasetNote && <p>{datasetNote}</p>}
           </aside>
 
@@ -1377,7 +1414,7 @@ export default function App({ eligibilityInput = null } = {}) {
                               rel="noopener noreferrer"
                               className="official-url"
                             >
-                              Open Official Application Portal &#x2197;
+                              View Official Source &#x2197;
                             </a>
                           </div>
                         )}

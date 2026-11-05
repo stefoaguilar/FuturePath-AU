@@ -20,11 +20,12 @@ export function renderInitialApp(props = {}) {
 
 // Run the actual component handlers against a small state harness without adding
 // a browser/test dependency. The SSR check below also uses real React hooks.
-export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {} } = {}) {
+export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {}, timers = { setTimeout, clearTimeout } } = {}) {
   const state = [];
   let cursor = 0;
   let tree;
   let activeProfile;
+  let effects = [];
   const hooks = {
     ...React,
     useState(initial) {
@@ -39,19 +40,24 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
       if (result && 'education_level' in result) activeProfile = result;
       return result;
     },
-    useEffect() {}
+    useRef(initial) {
+      const index = cursor++;
+      if (!(index in state)) state[index] = { current: initial };
+      return state[index];
+    },
+    useEffect(callback) { effects.push(callback); }
   };
   const module = { exports: {} };
   runInNewContext(code, {
     module, exports: module.exports,
     require: (name) => name === 'react' ? hooks : require(name),
     fetch: fetchImpl,
-    URL, AbortController, setTimeout, clearTimeout,
+    URL, AbortController, setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout,
     console: { warn() {} },
     window: { confirm: () => true },
     document: { getElementById: () => null }
   });
-  const render = () => { cursor = 0; tree = module.exports.default(appProps); };
+  const render = () => { cursor = 0; effects = []; tree = module.exports.default(appProps); };
   const nodes = () => {
     const result = [];
     function visit(node) {
@@ -88,6 +94,10 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
   return {
     render, nodes, find, text, byId, button, change, submit,
     setProps: (props) => { appProps = props; render(); },
+    runEffects: () => {
+      const cleanups = effects.map((callback) => callback());
+      return () => cleanups.forEach((cleanup) => cleanup?.());
+    },
     profile: () => JSON.parse(JSON.stringify(activeProfile)),
     markup: () => text(tree)
   };

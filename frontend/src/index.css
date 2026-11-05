@@ -38,9 +38,6 @@
   --status-upcoming-text: #075985;
   --status-upcoming-border: #7dd3fc;
 
-  --status-passed-bg: #f1f5f9;
-  --status-passed-text: #475569;
-  --status-passed-border: #cbd5e1;
 
   --status-rolling-bg: #f3e8ff;
   --status-rolling-text: #6b21a8;
@@ -1008,10 +1005,18 @@ body {
   border-color: var(--status-upcoming-border);
 }
 
-.badge-passed {
-  background-color: var(--status-passed-bg);
-  color: var(--status-passed-text);
-  border-color: var(--status-passed-border);
+.badge-deadline-unknown {
+  background-color: #f8fafc;
+  color: #334155;
+  border-color: #64748b;
+  border-style: dashed;
+}
+
+.badge-deadline-closed,
+.badge-deadline-past {
+  background-color: #e2e8f0;
+  color: #334155;
+  border-color: #64748b;
 }
 
 .badge-rolling {
