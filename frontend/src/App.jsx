@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import localOpportunityDataset from '../../data/opportunities.json';
+import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
 
 /**
  * ==============================================================================
@@ -18,169 +20,8 @@ import React, { useState, useEffect, useMemo } from 'react';
  * ==============================================================================
  */
 
-// Fallback verified source data representing SQLite futurepath.db entries
-// Used when the FastAPI backend is offline or for instant evaluation
-const VERIFIED_FALLBACK_OPPORTUNITIES = [
-  {
-    id: 1,
-    title: 'Cyber Security Cadetship Programme',
-    provider: 'Australian Signals Directorate (ASD)',
-    category: 'Cadetship',
-    prerequisites: [
-      'Australian Citizenship',
-      'Enrolled in undergraduate degree in IT, Computer Science, or STEM',
-      'Ability to obtain and maintain an NV1 Security Clearance',
-      'Foundational knowledge in Python, Linux, or Networking'
-    ],
-    deadline: '2026-11-30',
-    source_url: 'https://www.asd.gov.au/careers/cadetships',
-    verification_date: '2026-10-15',
-    description: 'Direct entry cadetship offering paid university study support, mentoring, and technical rotations in national cybersecurity operations.'
-  },
-  {
-    id: 2,
-    title: 'Indigenous Apprenticeship Programme (Cyber & Digital Stream)',
-    provider: 'Services Australia (Australian Public Service)',
-    category: 'Apprenticeship',
-    prerequisites: [
-      'Australian Citizenship',
-      'Passion for Digital Technologies and Cyber Defence',
-      'Commitment to complete 12-month structured diploma training',
-      'Open to career changers (No prerequisite IT degree required)'
-    ],
-    deadline: '2026-12-15',
-    source_url: 'https://www.servicesaustralia.gov.au/indigenous-apprenticeships-programme',
-    verification_date: '2026-10-20',
-    description: 'Full-time permanent Australian Public Service role with structured certificate/diploma study, cultural mentoring, and cohort support.'
-  },
-  {
-    id: 3,
-    title: 'Cloud Security & Mentorship Accelerator',
-    provider: 'Amazon Web Services (AWS) Australia',
-    category: 'Mentorship',
-    prerequisites: [
-      'Enrolled or recent graduate of tertiary IT qualification',
-      'Foundational understanding of Cloud Computing and Networking',
-      'Completion of AWS Cloud Practitioner Essentials (Free online self-study)'
-    ],
-    deadline: 'rolling',
-    source_url: 'https://aws.amazon.com/training/mentorship-au',
-    verification_date: '2026-10-10',
-    description: '12-week structured 1-on-1 industry mentorship with senior AWS Security Architects and certification voucher support.'
-  },
-  {
-    id: 4,
-    title: 'Cyber Incident Response Student Internship',
-    provider: 'Telstra Security Operations',
-    category: 'Internship',
-    prerequisites: [
-      'Current university student in Cyber Security, IT or Software Engineering',
-      'Hands-on experience with SIEM tools, Wireshark, or Packet Analysis',
-      'Strong analytical problem-solving and documentation skills'
-    ],
-    deadline: '2026-10-01', // Explicitly past deadline to demonstrate passed state
-    source_url: 'https://careers.telstra.com/cyber-internships',
-    verification_date: '2026-09-18',
-    description: 'Real-world blue team and incident response rotation inside Telstra Global SOC.'
-  },
-  {
-    id: 5,
-    title: 'Cyber Threat Intelligence Research Scholarship',
-    provider: 'CSIRO / Data61',
-    category: 'Scholarship',
-    prerequisites: [
-      'Australian Citizenship or Permanent Residency',
-      'Bachelor degree in IT, Computer Science or Mathematics with Distinction average',
-      'Demonstrated proficiency in Python, C++, or Data Analysis'
-    ],
-    deadline: '2026-12-31',
-    source_url: 'https://www.csiro.au/en/careers/scholarships',
-    verification_date: '2026-10-25',
-    description: 'Funded honours or master research scholarship examining automated vulnerability analysis and threat telemetry.'
-  },
-  {
-    id: 6,
-    title: 'Certificate IV & Cyber Traineeship Network',
-    provider: 'TAFE NSW / Macquarie Cyber Hub',
-    category: 'Traineeship',
-    prerequisites: [
-      'Completion of Australian Year 12 or equivalent qualification',
-      'Demonstrated problem-solving aptitude and IT curiosity',
-      'Basic Linux and command line fundamentals'
-    ],
-    deadline: '2027-01-20',
-    source_url: 'https://www.tafensw.edu.au/course/cyber-security',
-    verification_date: '2026-10-28',
-    description: 'Paid vocational traineeship pathway partnering with regional Australian cyber defense employers.'
-  }
-];
-
-// Helper: Normalize prerequisites to array
-function normalizePrerequisites(prereqs) {
-  if (Array.isArray(prereqs)) return prereqs;
-  if (typeof prereqs === 'string') {
-    try {
-      const parsed = JSON.parse(prereqs);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {
-      return prereqs.split(';').map((s) => s.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
-
-// [HAK-06] Deterministic Deadline State Evaluator
-function evaluateDeadline(deadlineStr) {
-  if (!deadlineStr || deadlineStr.toLowerCase() === 'rolling' || deadlineStr.toLowerCase() === 'unknown' || deadlineStr.toLowerCase() === 'tbd') {
-    return {
-      status: 'rolling',
-      label: 'Rolling / Unknown',
-      badgeClass: 'badge-rolling',
-      displayDate: 'Continuous intake'
-    };
-  }
-
-  const deadlineDate = new Date(deadlineStr);
-  if (isNaN(deadlineDate.getTime())) {
-    return {
-      status: 'rolling',
-      label: 'Rolling / Unknown',
-      badgeClass: 'badge-rolling',
-      displayDate: deadlineStr
-    };
-  }
-
-  // System reference date (local client date)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  deadlineDate.setHours(0, 0, 0, 0);
-
-  const diffTime = deadlineDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadlineDate.toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-
-  if (diffDays < 0) {
-    return {
-      status: 'passed',
-      label: 'Passed / Closed',
-      badgeClass: 'badge-passed',
-      displayDate: `Closed on ${formattedDate}`
-    };
-  }
-
-  const daysSuffix = diffDays === 0 ? 'Closes today' : `${diffDays} days left`;
-  return {
-    status: 'upcoming',
-    label: `Upcoming: ${formattedDate}`,
-    badgeClass: 'badge-upcoming',
-    displayDate: `${formattedDate} (${daysSuffix})`
-  };
-}
+// Vite bundles the shared source JSON in development and production. No copied dataset.
+const LOCAL_OPPORTUNITIES = readOpportunities(localOpportunityDataset);
 
 // Eligibility decisions belong to FastAPI. The current opportunity fetch does not
 // return profile-specific evaluations; never infer results from prerequisite text.
@@ -428,10 +269,11 @@ export default function App() {
   // ---------------------------------------------------------------------------
   // [HAK-03 & HAK-06] State: Opportunities & Backend Connection
   // ---------------------------------------------------------------------------
-  const [opportunities, setOpportunities] = useState([]);
+  const [opportunities, setOpportunities] = useState(LOCAL_OPPORTUNITIES);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const [backendDataSource, setBackendDataSource] = useState('offline-verified'); // 'live-fastapi' | 'offline-verified'
+  const [backendDataSource, setBackendDataSource] = useState('local-development');
+  const [datasetNote, setDatasetNote] = useState(localOpportunityDataset.dataset_note);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -501,41 +343,32 @@ export default function App() {
   const fetchOpportunitiesFromBackend = async () => {
     setIsLoading(true);
     setApiError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
-      // Connect to FastAPI on 127.0.0.1:8000
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-
       const response = await fetch('http://127.0.0.1:8000/api/opportunities', {
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
       }
-
       const data = await response.json();
-      const items = Array.isArray(data) ? data : data.opportunities || [];
-      if (items.length > 0) {
-        setOpportunities(items);
-        setBackendDataSource('live-fastapi');
-        setApiError(null);
-      } else {
-        // Empty backend table
-        setOpportunities([]);
-        setBackendDataSource('live-fastapi');
-      }
+      const items = readOpportunities(data);
+      // A valid empty API list remains empty; it is not a connection failure.
+      setOpportunities(items);
+      setDatasetNote(Array.isArray(data) ? '' : data.dataset_note || '');
+      setBackendDataSource('live-fastapi');
     } catch (err) {
-      // Graceful error state handling
-      console.warn('FastAPI backend unreachable or error occurred:', err.message);
+      console.warn('FastAPI opportunity request failed:', err.message);
       setApiError(
-        'FastAPI server unreachable at http://127.0.0.1:8000/api/opportunities. Please ensure your backend is running (`uvicorn main:app --reload`). Displaying verified fact-grounded prototype data for testing.'
+        `Opportunity API unavailable or returned invalid data (${err.message}). ` +
+        'Using the local JSON development fallback. The current backend implements only / and /health; /api/opportunities is pending.'
       );
-      // Populate verified fallback data so grading and user testing continue seamlessly
-      setOpportunities(VERIFIED_FALLBACK_OPPORTUNITIES);
-      setBackendDataSource('offline-verified');
+      setOpportunities(LOCAL_OPPORTUNITIES);
+      setDatasetNote(localOpportunityDataset.dataset_note);
+      setBackendDataSource('local-development');
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -574,12 +407,11 @@ export default function App() {
   // ---------------------------------------------------------------------------
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
-      const matchesSearch =
-        opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opp.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opp.category.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesCategory = selectedCategory === 'ALL' || opp.category.toUpperCase() === selectedCategory.toUpperCase();
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch = [opp.id, opp.title, opp.provider, opp.category, displayValue(opp.category),
+        opp.location, displayValue(opp.study_level), opp.summary, ...(opp.skills || [])]
+        .some((value) => value.toLowerCase().includes(query));
+      const matchesCategory = selectedCategory === 'ALL' || opp.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
@@ -599,6 +431,25 @@ export default function App() {
     }
 
     setSelectedOpportunityForPathway(opportunity);
+
+    const deadline = evaluateDeadline(opportunity.deadline);
+    const applicationStep = deadline.status === 'past'
+      ? {
+          title: `Watch for the Next Round at ${opportunity.provider}`,
+          description: `This round has closed or its closing date has passed. Check ${opportunity.source_url} for provider announcements; no next opening date is assumed.`,
+          timeline: 'Next opening date not announced'
+        }
+      : deadline.status === 'unknown'
+        ? {
+            title: `Check Application Dates with ${opportunity.provider}`,
+            description: `No closing date is published. Check the official source at ${opportunity.source_url} before preparing a student-initiated application.`,
+            timeline: 'Application dates to be confirmed'
+          }
+        : {
+            title: `Submit Direct Application to ${opportunity.provider}`,
+            description: `Review the published requirements and submit directly via ${opportunity.source_url}. Applications are never submitted automatically.`,
+            timeline: deadline.status === 'rolling' ? 'Open all year' : `Before deadline (${formatDate(opportunity.deadline.date)})`
+          };
 
     // Generate editable preparation guidance without inferring eligibility gaps.
     const newMilestones = [
@@ -623,9 +474,7 @@ export default function App() {
       {
         id: `step-${Date.now()}-3`,
         phase: 'Milestone 2: Application Submission (Student-Initiated)',
-        title: `Submit Direct Application to ${opportunity.provider}`,
-        description: `Prepare cyber capability statement and submit directly via ${opportunity.source_url}. (Reminder: Applications are never submitted automatically).`,
-        timeline: opportunity.deadline && opportunity.deadline !== 'rolling' ? `Before deadline (${opportunity.deadline})` : 'Weeks 6 - 7',
+        ...applicationStep,
         status: 'pending',
         actionableUrl: opportunity.source_url
       },
@@ -780,7 +629,7 @@ export default function App() {
           <div className="header-meta">
             <span className={`status-pill ${backendDataSource === 'live-fastapi' ? 'pill-live' : 'pill-mock'}`}>
               <span className="indicator-dot"></span>
-              {backendDataSource === 'live-fastapi' ? 'FastAPI Connected (127.0.0.1:8000)' : 'Offline Verified Mode (Ready)'}
+              {backendDataSource === 'live-fastapi' ? 'FastAPI Connected (127.0.0.1:8000)' : 'Local JSON development fallback'}
             </span>
             <button
               type="button"
@@ -824,7 +673,7 @@ export default function App() {
               </div>
               <div>
                 <strong>3. Deterministic Fact-Grounded Data</strong>
-                <p>All prerequisites, deadlines, and source links are verified facts grounded in official databases.</p>
+                <p>Published requirements, deadlines and source links retain their recorded verification status.</p>
               </div>
             </div>
             <div className="safeguard-item">
@@ -849,7 +698,7 @@ export default function App() {
             <IconAlertTriangle size={22} />
           </div>
           <div className="api-error-body">
-            <h4>FastAPI Backend Connection Notice</h4>
+            <h4>Opportunity API / Development Fallback Notice</h4>
             <p>{apiError}</p>
             <div className="api-error-troubleshooting">
               <span>Quick Backend Verification:</span>
@@ -1108,17 +957,23 @@ export default function App() {
         <section className="card section-card" id="opportunities-section" aria-labelledby="opportunities-heading">
           <div className="section-header">
             <div>
-              <span className="section-step-tag">[HAK-03 &amp; HAK-04] Verified Database</span>
-              <h2 id="opportunities-heading">Verified Opportunities &amp; Prerequisite Eligibility</h2>
+              <span className="section-step-tag">[HAK-03 &amp; HAK-04] Opportunity Dataset</span>
+              <h2 id="opportunities-heading">Opportunities &amp; Published Eligibility Conditions</h2>
             </div>
             <span className="results-count">
-              Showing <strong>{filteredOpportunities.length}</strong> of {opportunities.length} Verified Entries
+              Showing <strong>{filteredOpportunities.length}</strong> of {opportunities.length} Records
             </span>
           </div>
 
           <p className="section-description">
-            Explore authentic, source-grounded cyber traineeships, cadetships, scholarships, and mentorships. Backend eligibility outcomes are <strong>Satisfied</strong>, <strong>Unmet</strong>, or <strong>Uncertain</strong>. Until a backend result is available for your profile, prerequisites are <strong>Not yet evaluated</strong>. Missing information never means satisfied or unmet; identity conditions are never automatically evaluated.
+            Explore published study and career opportunities. Check each record's source and verification status. Backend eligibility outcomes are <strong>Satisfied</strong>, <strong>Unmet</strong>, or <strong>Uncertain</strong>. Until a backend result is available for your profile, prerequisites are <strong>Not yet evaluated</strong>. Missing information never means satisfied or unmet; identity conditions are never automatically evaluated.
           </p>
+
+          <aside className="dataset-notice" role="note" aria-label="Opportunity data source">
+            <strong>{backendDataSource === 'live-fastapi' ? 'Source: FastAPI opportunity API' : 'Development fallback: data/opportunities.json (bundled local copy)'}</strong>
+            <p>Demo reference date: 28 November 2026 ({DEMO_REFERENCE_DATE}). Closed and past rounds remain visible for research and planning.</p>
+            {datasetNote && <p>{datasetNote}</p>}
+          </aside>
 
           {/* Search and Filters Bar */}
           <div className="filter-bar">
@@ -1130,7 +985,7 @@ export default function App() {
                 id="searchQuery"
                 type="text"
                 className="form-input search-input"
-                placeholder="Search by title, provider, or keyword..."
+                placeholder="Search by title, provider, location, skill, or keyword..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1147,15 +1002,16 @@ export default function App() {
             </div>
 
             <div className="category-filters" role="group" aria-label="Filter by Category">
-              {['ALL', 'CADETSHIP', 'TRAINEESHIP', 'APPRENTICESHIP', 'MENTORSHIP', 'INTERNSHIP', 'SCHOLARSHIP'].map(
+              {['ALL', ...OPPORTUNITY_CATEGORIES].map(
                 (category) => (
                   <button
                     key={category}
                     type="button"
                     className={`filter-chip ${selectedCategory === category ? 'filter-chip-active' : ''}`}
                     onClick={() => setSelectedCategory(category)}
+                    aria-pressed={selectedCategory === category}
                   >
-                    {category === 'ALL' ? 'All Opportunities' : category}
+                    {category === 'ALL' ? 'All Opportunities' : displayValue(category)}
                   </button>
                 )
               )}
@@ -1166,7 +1022,7 @@ export default function App() {
           {isLoading && (
             <div className="state-container loading-state" role="status">
               <div className="spinner" aria-hidden="true"></div>
-              <p>Fetching source-grounded opportunities from FastAPI (`http://127.0.0.1:8000`)...</p>
+              <p>Fetching opportunities from FastAPI (`http://127.0.0.1:8000`)...</p>
             </div>
           )}
 
@@ -1177,7 +1033,7 @@ export default function App() {
                 <IconSearch size={28} />
               </div>
               <h3>No Opportunities Match Your Filter</h3>
-              <p>We could not find any verified opportunities matching "{searchQuery}" under {selectedCategory}.</p>
+              <p>We could not find any opportunities matching "{searchQuery}" under {selectedCategory}.</p>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -1196,11 +1052,11 @@ export default function App() {
             <div className="opportunities-grid">
               {filteredOpportunities.map((opportunity) => {
                 const deadlineEvaluation = evaluateDeadline(opportunity.deadline);
-                const prereqList = normalizePrerequisites(opportunity.prerequisites);
+                const prereqList = opportunity.eligibility_conditions;
 
                 // Calculate eligibility stats
                 const evaluatedPrereqs = prereqList.map((prereq) => ({
-                  text: prereq,
+                  ...prereq,
                   evaluation: evaluatePrerequisite()
                 }));
 
@@ -1210,11 +1066,14 @@ export default function App() {
                 const pendingCount = evaluatedPrereqs.filter((p) => p.evaluation.status === 'not_yet_evaluated').length;
 
                 return (
-                  <article key={opportunity.id} className="opportunity-card" aria-labelledby={`opp-title-${opportunity.id}`}>
+                  <article key={opportunity.id} data-opportunity-id={opportunity.id} className="opportunity-card" aria-labelledby={`opp-title-${opportunity.id}`}>
                     {/* Card Header */}
                     <div className="card-top">
                       <div className="card-meta-line">
-                        <span className="badge badge-category">{opportunity.category}</span>
+                        <span className="badge badge-category">{displayValue(opportunity.category)}</span>
+                        <span className={`badge ${opportunity.record_type === 'synthetic' ? 'badge-uncertain' : 'badge-category'}`}>
+                          {opportunity.record_type === 'synthetic' ? 'SYNTHETIC - demonstration only' : 'Real record'}
+                        </span>
                         <span className={`badge ${deadlineEvaluation.badgeClass}`} title="Deterministic deadline status">
                           {deadlineEvaluation.label}
                         </span>
@@ -1225,7 +1084,24 @@ export default function App() {
                       <div className="provider-name">{opportunity.provider}</div>
                     </div>
 
-                    <p className="card-description">{opportunity.description}</p>
+                    <dl className="opportunity-facts">
+                      <div><dt>Record ID</dt><dd>{opportunity.id}</dd></div>
+                      <div><dt>Location</dt><dd>{opportunity.location}</dd></div>
+                      <div><dt>Study level</dt><dd>{displayValue(opportunity.study_level)}</dd></div>
+                    </dl>
+                    <p className="card-description">{opportunity.summary}</p>
+                    <div className="opportunity-skills">
+                      <strong>Published skills / subjects:</strong>
+                      <div className="tags-pills-list">
+                        {(opportunity.skills || []).length > 0
+                          ? opportunity.skills.map((skill) => <span key={skill} className="skill-tag">{skill}</span>)
+                          : <span>No skills published; requirements are not assumed.</span>}
+                      </div>
+                    </div>
+                    <div className="deadline-details">
+                      <strong>{deadlineEvaluation.displayDate}</strong>
+                      {opportunity.deadline.note && <p>{opportunity.deadline.note}</p>}
+                    </div>
 
                     {/* [HAK-04] Eligibility & Skill Gap Breakdown */}
                     <div className="eligibility-breakdown">
@@ -1246,8 +1122,9 @@ export default function App() {
                       </div>
 
                       <ul className="prereq-list">
-                        {evaluatedPrereqs.map((item, idx) => (
-                          <li key={idx} className="prereq-item">
+                        {evaluatedPrereqs.map((item) => (
+                          <li key={item.id} className="prereq-item" data-condition-id={item.id}
+                            data-checkable-from-profile={item.checkable_from_profile}>
                             <div className="prereq-header">
                               <span className={`status-tag ${item.evaluation.badgeClass}`}>
                                 {item.evaluation.label}
@@ -1255,18 +1132,25 @@ export default function App() {
                               <span className="prereq-text">{item.text}</span>
                             </div>
                             <div className="prereq-audit-note">
-                              <strong>Audit:</strong> {item.evaluation.reason}
+                              <p><strong>Evidence:</strong> {item.evidence_summary}</p>
+                              <p><a href={item.source_url} target="_blank" rel="noopener noreferrer">Condition source <IconExternalLink /></a></p>
+                              <p>{item.type === 'identity_requirement'
+                                ? 'Voluntary student confirmation only; identity is never automatically evaluated or scored.'
+                                : item.checkable_from_profile
+                                  ? 'Marked checkable from profile in the source data; awaiting backend evaluation.'
+                                  : 'Requires human review; not checkable from profile.'}</p>
+                              <p><strong>Status:</strong> {item.evaluation.reason}</p>
                             </div>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    {/* Fact Grounded Source Verification Metadata */}
+                    {/* Published source and recorded verification metadata */}
                     <div className="verification-footer">
                       <div className="verification-details">
                         <span className="verified-date">
-                          Verified on: <strong>{opportunity.verification_date || '2026-10-15'}</strong>
+                          {opportunity.record_type === 'synthetic' ? 'Synthetic record date' : 'Last checked / imported'}: <strong>{opportunity.verification.verified_on}</strong>
                         </span>
                         <span className="source-link-container">
                           Official Source:&nbsp;
@@ -1281,6 +1165,17 @@ export default function App() {
                           </a>
                         </span>
                       </div>
+
+                      <div className="verification-method">
+                        <strong>Verification: {displayValue(opportunity.verification.status)}</strong>
+                        <p>{opportunity.verification.method}</p>
+                      </div>
+                      {opportunity.data_notes && (
+                        <details className="data-notes">
+                          <summary>Source and data notes</summary>
+                          <p>{opportunity.data_notes}</p>
+                        </details>
+                      )}
 
                       {/* Action to Generate / Populate Pathway */}
                       <div className="card-action-bar">
