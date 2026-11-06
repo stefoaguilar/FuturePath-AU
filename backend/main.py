@@ -1,17 +1,15 @@
 
 import json
-from pathlib import Path
+import sqlite3
+from contextlib import closing
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-
-# Locate Samer's dataset from the project root.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_FILE = PROJECT_ROOT / "data" / "opportunities.json"
+from database import DATABASE_PATH
 
 
-# Create the FuturePath AU backend.
+# Create the FuturePath AU backend application.
 app = FastAPI(
     title="FuturePath AU API",
     description="Backend API for the FuturePath AU cybersecurity pathway navigator.",
@@ -19,7 +17,7 @@ app = FastAPI(
 )
 
 
-# Allow Hakm's local React application to access the API.
+# Allow Hakm's React frontend to communicate with FastAPI.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -50,27 +48,110 @@ def health_check():
     }
 
 
-# New opportunity catalogue endpoint.
+# Retrieve opportunity records from SQLite.
 @app.get("/api/opportunities")
 def get_opportunities():
+
+    # Avoid creating an empty database accidentally.
+    if not DATABASE_PATH.is_file():
+        raise HTTPException(
+            status_code=500,
+            detail="Opportunity database is unavailable."
+        )
+
     try:
-        with DATA_FILE.open("r", encoding="utf-8") as file:
-            dataset = json.load(file)
+        # Open the existing database in read-only mode.
+        database_uri = DATABASE_PATH.as_uri() + "?mode=ro"
 
-    except (FileNotFoundError, json.JSONDecodeError):
+        with closing(
+            sqlite3.connect(database_uri, uri=True)
+        ) as connection:
+
+            connection.row_factory = sqlite3.Row
+
+            # Retrieve the original dataset metadata.
+            metadata_rows = connection.execute(
+                "SELECT key, value FROM dataset_metadata"
+            ).fetchall()
+
+            metadata = {
+                row["key"]: row["value"]
+                for row in metadata_rows
+            }
+
+            # Retrieve opportunities in their original order.
+            opportunity_rows = connection.execute("""
+                SELECT
+                    id, record_type, title, provider,
+                    category, location, study_level,
+                    summary, skills_json, source_url,
+                    deadline_json, verification_json,
+                    data_notes
+                FROM opportunities
+                ORDER BY position
+            """).fetchall()
+
+            opportunities = []
+
+            for row in opportunity_rows:
+
+                # Retrieve conditions for this opportunity.
+                condition_rows = connection.execute("""
+                    SELECT
+                        id, type, text, evidence_summary,
+                        source_url, checkable_from_profile
+                    FROM eligibility_conditions
+                    WHERE opportunity_id = ?
+                    ORDER BY position
+                """, (row["id"],)).fetchall()
+
+                conditions = []
+
+                for condition in condition_rows:
+                    conditions.append({
+                        "id": condition["id"],
+                        "type": condition["type"],
+                        "text": condition["text"],
+                        "evidence_summary": condition["evidence_summary"],
+                        "source_url": condition["source_url"],
+                        "checkable_from_profile": bool(
+                            condition["checkable_from_profile"]
+                        )
+                    })
+
+                # Reconstruct Samer's original JSON format.
+                opportunity = {
+                    "id": row["id"],
+                    "record_type": row["record_type"],
+                    "title": row["title"],
+                    "provider": row["provider"],
+                    "category": row["category"],
+                    "location": row["location"],
+                    "study_level": row["study_level"],
+                    "summary": row["summary"],
+                    "skills": json.loads(row["skills_json"]),
+                    "source_url": row["source_url"],
+                    "eligibility_conditions": conditions,
+                    "deadline": json.loads(row["deadline_json"]),
+                    "verification": json.loads(row["verification_json"]),
+                    "data_notes": row["data_notes"]
+                }
+
+                opportunities.append(opportunity)
+
+            # Return the same response format as before.
+            return {
+                "schema_version": metadata.get(
+                    "schema_version", ""
+                ),
+                "dataset_note": metadata.get(
+                    "dataset_note", ""
+                ),
+                "opportunities": opportunities
+            }
+
+    except (sqlite3.Error, json.JSONDecodeError) as error:
         raise HTTPException(
             status_code=500,
-            detail="Opportunity dataset is unavailable or invalid."
-        )
-
-    # Check the minimum required response structure.
-    if (
-        not isinstance(dataset, dict)
-        or not isinstance(dataset.get("opportunities"), list)
-    ):
-        raise HTTPException(
-            status_code=500,
-            detail="Opportunity dataset has an invalid structure."
-        )
-
-    return dataset
+            detail="Unable to retrieve opportunity records."
+        ) from error
