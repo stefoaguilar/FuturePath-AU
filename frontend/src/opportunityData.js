@@ -1,5 +1,8 @@
 // Shared presentation/validation rules for data/SCHEMA.md. No eligibility logic.
-export const DEMO_REFERENCE_DATE = '2026-11-28';
+// Read calendar components locally; ISO timestamps would shift dates near midnight.
+export function localCalendarDate(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 export const OPPORTUNITY_CATEGORIES = [
   'scholarship', 'internship', 'cadetship', 'graduate_program', 'traineeship',
   'course', 'certification', 'mentoring', 'other'
@@ -61,10 +64,15 @@ export function readOpportunities(payload) {
     if (deadline.status === 'date' && !isDate(deadline.date)) fail('deadline date');
     if (['rolling', 'unknown'].includes(deadline.status) && deadline.date !== null) fail('rolling/unknown deadline date must be null');
     if (deadline.status === 'closed' && (!isText(deadline.note) ||
-        (deadline.date != null && (!isDate(deadline.date) || deadline.date > DEMO_REFERENCE_DATE)))) fail('closed deadline needs a note and an optional previous date');
+        (deadline.date != null && !isDate(deadline.date)))) fail('closed deadline needs a note and an optional previous date');
     const verification = record.verification;
     if (!isObject(verification) || !isDate(verification.verified_on) || !isText(verification.method) ||
         !['verified', 'needs_recheck', 'conflicting', 'synthetic'].includes(verification.status)) fail('verification');
+    // A published previous closing date cannot be later than its verification.
+    // Validate against recorded evidence, so acceptance never depends on the clock.
+    if (deadline.status === 'closed' && deadline.date != null && deadline.date > verification.verified_on) {
+      fail('closed deadline cannot be after its verification date');
+    }
     if (record.record_type === 'synthetic' &&
         (!record.title.toLowerCase().includes('synthetic') || verification.status !== 'synthetic')) fail('synthetic record must be labelled in title and verification');
     if (record.record_type === 'real' && verification.status === 'synthetic') fail('real record cannot have synthetic verification');
@@ -79,10 +87,12 @@ export function formatDate(value) {
 }
 
 // Deadline presentation only, never confirmation of application availability or
-// student eligibility. Fixed demo date and UTC arithmetic ignore the system clock.
-export function evaluateDeadline(deadline) {
+// student eligibility. Compare date-only values in UTC to avoid DST-length days,
+// after selecting today's date locally. Tests can supply an explicit YYYY-MM-DD.
+export function evaluateDeadline(deadline, referenceDate = localCalendarDate()) {
+  if (!isDate(referenceDate)) throw new Error('Expected a valid reference date (YYYY-MM-DD).');
   if (deadline.status === 'rolling') return {
-    status: 'rolling', label: 'Open all year', displayDate: 'Open all year',
+    status: 'rolling', label: 'Rolling applications – no fixed closing date', displayDate: 'Rolling applications – no fixed closing date',
     badgeClass: 'badge-rolling'
   };
   if (deadline.status === 'unknown') return {
@@ -94,7 +104,7 @@ export function evaluateDeadline(deadline) {
     displayDate: deadline.date ? `Previous closing date: ${formatDate(deadline.date)}` : 'Closed round; previous closing date not published',
     badgeClass: 'badge-deadline-closed'
   };
-  const days = Math.round((Date.parse(deadline.date) - Date.parse(DEMO_REFERENCE_DATE)) / 86400000);
+  const days = Math.round((Date.parse(deadline.date) - Date.parse(referenceDate)) / 86400000);
   if (days < 0) return {
     status: 'past', label: 'Past deadline', displayDate: `Closing date elapsed: ${formatDate(deadline.date)}`,
     badgeClass: 'badge-deadline-past'

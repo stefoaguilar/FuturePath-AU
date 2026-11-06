@@ -1,9 +1,90 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { DEMO_REFERENCE_DATE, evaluateDeadline } from '../src/opportunityData.js';
+import { spawnSync } from 'node:child_process';
+import { evaluateDeadline } from '../src/opportunityData.js';
 import { harness, loadAllOpportunities } from './helpers/app-harness.mjs';
 
+const REFERENCE_DATE = '2026-11-28';
+
+test('runtime defaults use local dates near UTC midnight and across DST', () => {
+  const moduleUrl = new URL('../src/opportunityData.js', import.meta.url).href;
+  for (const [zone, instant, expected] of [
+    ['Pacific/Auckland', '2026-12-31T11:30:00Z', '2027-01-01'],
+    ['America/Los_Angeles', '2027-01-01T07:30:00Z', '2026-12-31'],
+    ['Australia/Sydney', '2026-10-03T14:30:00Z', '2026-10-04'],
+    ['Australia/Sydney', '2026-04-04T14:30:00Z', '2026-04-05']
+  ]) {
+    const script = `
+      import assert from 'node:assert/strict';
+      import { localCalendarDate, evaluateDeadline } from ${JSON.stringify(moduleUrl)};
+      const RealDate = Date;
+      globalThis.Date = class extends RealDate {
+        constructor(...args) { super(...(args.length ? args : [${JSON.stringify(instant)}])); }
+      };
+      assert.equal(localCalendarDate(), ${JSON.stringify(expected)});
+      assert.match(evaluateDeadline({status: 'date', date: ${JSON.stringify(expected)}}).displayDate, /Closes today/);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      assert.match(evaluateDeadline({status: 'date', date: localCalendarDate(tomorrow)}).displayDate, /1 day left/);
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
+      env: { ...process.env, TZ: zone }, encoding: 'utf8'
+    });
+    assert.equal(result.status, 0, result.stderr);
+  }
+});
+
+test('leap days and year boundaries use whole calendar days', () => {
+  for (const [reference, date] of [
+    ['2028-02-28', '2028-02-29'], ['2028-02-29', '2028-03-01'],
+    ['2026-12-31', '2027-01-01']
+  ]) {
+    assert.match(evaluateDeadline({ status: 'date', date }, reference).displayDate, /1 day left/);
+    assert.equal(evaluateDeadline({ status: 'date', date: reference }, date).status, 'past');
+  }
+  assert.throws(() => evaluateDeadline({ status: 'rolling', date: null }, '2026-02-30'), /reference date/);
+});
+
+test('open sessions refresh at midnight, on focus and resume, then clean up', async () => {
+  let now = new Date(2026, 10, 28, 23, 59, 59, 900);
+  class Clock extends Date {
+    constructor(...args) { super(...(args.length ? args : [now.getTime()])); }
+  }
+  const pending = new Map();
+  const calendarTimers = {
+    setTimeout(callback, delay) { const id = Symbol(); pending.set(id, { callback, delay }); return id; },
+    clearTimeout(id) { pending.delete(id); }
+  };
+  const record = { ...records[0], deadline: { status: 'date', date: '2026-11-29' } };
+  const original = JSON.stringify(record);
+  const ui = harness({ dateImpl: Clock, calendarTimers, fetchImpl: async () => response([record]) });
+  const cleanup = ui.runEffects();
+  await new Promise((resolve) => setImmediate(resolve)); ui.render();
+  assert.match(ui.markup(), /1 day left/);
+  assert.equal([...pending.values()][0].delay, 100);
+  now = new Date(2026, 10, 29);
+  [...pending.values()][0].callback(); ui.render();
+  assert.equal(pending.size, 1);
+  assert.match(ui.markup(), /Closes today/);
+  assert.match(ui.markup(), /current local date: 29 Nov 2026/);
+  now = new Date(2026, 10, 30, 12);
+  ui.focus(); ui.render();
+  assert.match(ui.markup(), /Past deadline/);
+  ui.button('Plan Pathway').props.onClick(); ui.render();
+  assert.match(ui.markup(), /Watch for the Next Round/);
+  now = new Date(2026, 10, 28, 12);
+  ui.visibilityChange(); ui.render();
+  assert.match(ui.markup(), /1 day left/);
+  ui.button('Plan Pathway').props.onClick(); ui.render();
+  assert.match(ui.markup(), /Check Application Availability/);
+  assert.equal(JSON.stringify(record), original);
+  cleanup();
+  assert.equal(pending.size, 0);
+  now = new Date(2027, 0, 1);
+  ui.focus(); ui.visibilityChange(); ui.render();
+  assert.match(ui.markup(), /current local date: 28 Nov 2026/);
+});
 const dataset = JSON.parse(readFileSync(new URL('../../data/opportunities.json', import.meta.url), 'utf8'));
 const records = dataset.opportunities;
 const ids = (ui) => ui.nodes().filter((node) => node.type === 'article').map((node) => node.props['data-opportunity-id']);
@@ -33,10 +114,10 @@ test('deadline badges describe all four source statuses without implying a passe
     { deadline: { status: 'closed', date: null, note: 'Round closed. No next date published.' }, label: 'Closed round', badge: 'badge-deadline-closed' },
     { deadline: { status: 'date', date: '2026-11-27' }, label: 'Past deadline', badge: 'badge-deadline-past' },
     { deadline: { status: 'date', date: '2026-11-30' }, label: 'Closing soon', badge: 'badge-upcoming' },
-    { deadline: { status: 'rolling', date: null }, label: 'Open all year', badge: 'badge-rolling' }
+    { deadline: { status: 'rolling', date: null }, label: 'Rolling applications – no fixed closing date', badge: 'badge-rolling' }
   ];
   for (const { deadline, label, badge } of cases) {
-    const result = evaluateDeadline(deadline);
+    const result = evaluateDeadline(deadline, REFERENCE_DATE);
     assert.equal(result.label, label);
     assert.equal(result.badgeClass, badge);
     assert.ok(!('canApplyNow' in result));
@@ -48,8 +129,7 @@ test('deadline badges describe all four source statuses without implying a passe
   }
 });
 
-test('deadline boundaries remain anchored to 28 November 2026 across month and year boundaries', () => {
-  assert.equal(DEMO_REFERENCE_DATE, '2026-11-28');
+test('explicit reference dates give deterministic month and year boundaries', () => {
   for (const [date, status, label, text] of [
     ['2026-11-27', 'past', 'Past deadline', '27 Nov 2026'],
     ['2026-11-28', 'future', 'Closing soon', 'Closes today'],
@@ -59,15 +139,15 @@ test('deadline boundaries remain anchored to 28 November 2026 across month and y
     ['2026-12-06', 'future', 'Future deadline', '8 days left'],
     ['2027-01-01', 'future', 'Future deadline', '34 days left']
   ]) {
-    const result = evaluateDeadline({ status: 'date', date });
+    const result = evaluateDeadline({ status: 'date', date }, REFERENCE_DATE);
     assert.equal(result.status, status);
     assert.equal(result.label, label);
     assert.ok(result.displayDate.includes(text));
   }
-  const closed = evaluateDeadline({ status: 'closed', date: '2026-03-30' });
+  const closed = evaluateDeadline({ status: 'closed', date: '2026-03-30' }, REFERENCE_DATE);
   assert.match(closed.displayDate, /Previous closing date: 30 Mar 2026/);
-  assert.match(evaluateDeadline({ status: 'closed', date: null }).displayDate, /not published/);
-  assert.equal(evaluateDeadline({ status: 'unknown', date: null }).displayDate, 'Deadline unknown');
+  assert.match(evaluateDeadline({ status: 'closed', date: null }, REFERENCE_DATE).displayDate, /not published/);
+  assert.equal(evaluateDeadline({ status: 'unknown', date: null }, REFERENCE_DATE).displayDate, 'Deadline unknown');
 });
 
 test('network, HTTP, invalid JSON and invalid schema failures use safe, distinct fallback messages', async () => {

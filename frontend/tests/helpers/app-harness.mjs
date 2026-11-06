@@ -7,6 +7,10 @@ import { buildSync } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
+// Stable runtime clock for UI fixtures; production always uses the real Date.
+export class FixtureDate extends Date {
+  constructor(...args) { super(...(args.length ? args : [2026, 10, 28, 12])); }
+}
 const code = buildSync({
   entryPoints: [fileURLToPath(new URL('../../src/App.jsx', import.meta.url))],
   bundle: true, write: false, format: 'cjs', platform: 'node', external: ['react']
@@ -29,7 +33,7 @@ export function renderInitialApp(props = {}) {
 
 // Run the actual component handlers against a small state harness without adding
 // a browser/test dependency. The SSR check below also uses real React hooks.
-export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {}, timers = { setTimeout, clearTimeout }, confirmImpl = () => true, alertImpl = () => {}, dateImpl = Date } = {}) {
+export function harness({ fetchImpl = async () => { throw new Error('Offline test'); }, appProps = {}, timers = { setTimeout, clearTimeout }, calendarTimers = { setTimeout: () => Symbol(), clearTimeout() {} }, confirmImpl = () => true, alertImpl = () => {}, dateImpl = FixtureDate } = {}) {
   const state = [];
   let cursor = 0;
   let tree;
@@ -39,7 +43,7 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
     ...React,
     useState(initial) {
       const index = cursor++;
-      if (!(index in state)) state[index] = initial;
+      if (!(index in state)) state[index] = typeof initial === 'function' ? initial() : initial;
       return [state[index], (value) => {
         state[index] = typeof value === 'function' ? value(state[index]) : value;
       }];
@@ -57,14 +61,21 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
     useEffect(callback) { effects.push(callback); }
   };
   const module = { exports: {} };
+  const windowEvents = new Map(), documentEvents = new Map();
+  const eventMethods = (events) => ({
+    addEventListener: (name, callback) => events.set(name, callback),
+    removeEventListener: (name) => events.delete(name)
+  });
   runInNewContext(code, {
     module, exports: module.exports,
     require: (name) => name === 'react' ? hooks : require(name),
     fetch: fetchImpl,
-    URL, AbortController, Date: dateImpl, setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout,
+    URL, AbortController, Date: dateImpl,
+    setTimeout: (callback, delay) => delay === 3500 ? timers.setTimeout(callback, delay) : calendarTimers.setTimeout(callback, delay),
+    clearTimeout: (id) => { timers.clearTimeout(id); calendarTimers.clearTimeout(id); },
     console: { warn() {} },
-    window: { confirm: confirmImpl, alert: alertImpl },
-    document: { getElementById: () => null }
+    window: { confirm: confirmImpl, alert: alertImpl, ...eventMethods(windowEvents) },
+    document: { getElementById: () => null, ...eventMethods(documentEvents) }
   });
   const render = () => { cursor = 0; effects = []; tree = module.exports.default(appProps); };
   const nodes = () => {
@@ -102,6 +113,8 @@ export function harness({ fetchImpl = async () => { throw new Error('Offline tes
   render();
   return {
     render, nodes, find, text, byId, button, change, submit,
+    focus: () => windowEvents.get('focus')?.(),
+    visibilityChange: () => documentEvents.get('visibilitychange')?.(),
     setProps: (props) => { appProps = props; render(); },
     runEffects: () => {
       const cleanups = effects.map((callback) => callback());

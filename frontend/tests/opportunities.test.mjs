@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline } from '../src/opportunityData.js';
+import { OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline } from '../src/opportunityData.js';
 import { harness, loadAllOpportunities } from './helpers/app-harness.mjs';
 
+const REFERENCE_DATE = '2026-11-28';
 const dataset = JSON.parse(readFileSync(new URL('../../data/opportunities.json', import.meta.url), 'utf8'));
 const records = dataset.opportunities;
 const cards = (ui) => ui.nodes().filter((node) => node.type === 'article');
@@ -104,24 +105,23 @@ test('search handles original IDs, skills, location and combined category filter
   assert.ok(cards(ui).every((node) => /queensland/i.test(ui.text(node))));
 });
 
-test('all four deadline statuses use only the fixed demo reference date', () => {
-  assert.equal(DEMO_REFERENCE_DATE, '2026-11-28');
-  const today = evaluateDeadline({ status: 'date', date: '2026-11-28' });
+test('all four deadline statuses support an explicit reference date', () => {
+  const today = evaluateDeadline({ status: 'date', date: '2026-11-28' }, REFERENCE_DATE);
   assert.equal(today.status, 'future');
   assert.match(today.displayDate, /Closes today/);
-  const soon = evaluateDeadline({ status: 'date', date: '2026-11-30' });
+  const soon = evaluateDeadline({ status: 'date', date: '2026-11-30' }, REFERENCE_DATE);
   assert.equal(soon.label, 'Closing soon');
   assert.match(soon.displayDate, /2 days left/);
-  const past = evaluateDeadline({ status: 'date', date: '2026-11-27' });
+  const past = evaluateDeadline({ status: 'date', date: '2026-11-27' }, REFERENCE_DATE);
   assert.equal(past.status, 'past');
   assert.equal(past.badgeClass, 'badge-deadline-past');
-  assert.equal(evaluateDeadline({ status: 'date', date: '2027-02-26' }).status, 'future');
-  const closed = evaluateDeadline({ status: 'closed', date: '2026-03-30' });
+  assert.equal(evaluateDeadline({ status: 'date', date: '2027-02-26' }, REFERENCE_DATE).status, 'future');
+  const closed = evaluateDeadline({ status: 'closed', date: '2026-03-30' }, REFERENCE_DATE);
   assert.equal(closed.badgeClass, 'badge-deadline-closed');
   assert.match(closed.displayDate, /Previous closing date: 30 Mar 2026/);
-  assert.match(evaluateDeadline({ status: 'closed', date: null }).displayDate, /not published/);
-  assert.equal(evaluateDeadline({ status: 'rolling', date: null }).label, 'Open all year');
-  const unknown = evaluateDeadline({ status: 'unknown', date: null });
+  assert.match(evaluateDeadline({ status: 'closed', date: null }, REFERENCE_DATE).displayDate, /not published/);
+  assert.equal(evaluateDeadline({ status: 'rolling', date: null }, REFERENCE_DATE).label, 'Rolling applications – no fixed closing date');
+  const unknown = evaluateDeadline({ status: 'unknown', date: null }, REFERENCE_DATE);
   assert.equal(unknown.label, 'Deadline unknown');
   assert.equal(unknown.badgeClass, 'badge-deadline-unknown');
 });
@@ -176,6 +176,8 @@ test('schema validation checks nested types, dates, optional fields and identity
     mutate((r) => { r.category = 'mentorship'; }),
     mutate((r) => { r.deadline = { status: 'date', date: '2026-02-30' }; }),
     mutate((r) => { r.deadline = { status: 'rolling', date: '2026-12-01' }; }),
+    mutate((r) => { r.deadline = { status: 'closed', date: '2026-02-30', note: 'Closed' }; }),
+    mutate((r) => { r.deadline = { status: 'closed', date: null, note: '' }; }),
     mutate((r) => { r.deadline = { status: 'closed', date: '2027-01-01', note: 'Closed' }; }),
     mutate((r) => { r.verification = null; }),
     mutate((r) => { r.eligibility_conditions[0].checkable_from_profile = 'true'; }),
@@ -184,6 +186,27 @@ test('schema validation checks nested types, dates, optional fields and identity
   const optional = mutate((r) => { delete r.skills; delete r.data_notes; });
   assert.strictEqual(readOpportunities(optional), optional);
   assert.throws(() => readOpportunities({ schema_version: 'unsupported', opportunities: [] }), /schema_version/);
+});
+
+test('published records and closed-record validation stay unchanged as the clock advances', (t) => {
+  const RealDate = Date;
+  let clock = '2000-01-01T00:00:00Z';
+  t.mock.method(globalThis, 'Date', class extends RealDate {
+    constructor(...args) { super(...(args.length ? args : [clock])); }
+  });
+  const original = JSON.stringify(dataset);
+  const closed = structuredClone(records.find((record) => record.deadline.status === 'closed'));
+  const invalid = structuredClone(closed);
+  invalid.deadline.date = '9999-12-31';
+  for (clock of ['2000-01-01T00:00:00Z', '2026-11-28T00:00:00Z', '2040-01-01T00:00:00Z']) {
+    assert.strictEqual(readOpportunities(dataset), records);
+    for (const date of [undefined, null, closed.verification.verified_on]) {
+      const payload = [{ ...closed, deadline: { ...closed.deadline, date } }];
+      assert.strictEqual(readOpportunities(payload), payload);
+    }
+    assert.throws(() => readOpportunities([invalid]), /closed deadline cannot be after its verification date/);
+  }
+  assert.equal(JSON.stringify(dataset), original);
 });
 
 test('synthetic API fixtures are clearly labelled and never described as verified real records', async () => {
@@ -202,9 +225,9 @@ test('closed, unknown, future and rolling pathways retain editing/approval witho
   const fixtures = [
     { record: records.find((r) => r.deadline.status === 'closed'), expected: /Watch for the Next Round/, timeline: /Next-round dates: check official source/ },
     { record: records.find((r) => r.deadline.status === 'unknown'), expected: /Check Application Dates/, timeline: /Application dates to be confirmed/ },
-    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date >= DEMO_REFERENCE_DATE), expected: /Check Application Availability/, timeline: /Published closing date/ },
-    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date < DEMO_REFERENCE_DATE), expected: /Watch for the Next Round/, timeline: /Next-round dates: check official source/ },
-    { record: { ...records[0], deadline: { status: 'rolling', date: null } }, expected: /Check Application Availability/, timeline: /Open all year/ }
+    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date >= REFERENCE_DATE), expected: /Check Application Availability/, timeline: /Published closing date/ },
+    { record: records.find((r) => r.deadline.status === 'date' && r.deadline.date < REFERENCE_DATE), expected: /Watch for the Next Round/, timeline: /Next-round dates: check official source/ },
+    { record: { ...records[0], deadline: { status: 'rolling', date: null } }, expected: /Check Application Availability/, timeline: /Rolling applications – no fixed closing date/ }
   ];
   for (const { record, expected, timeline } of fixtures) {
     const ui = harness({ fetchImpl: response({ opportunities: [record] }) });

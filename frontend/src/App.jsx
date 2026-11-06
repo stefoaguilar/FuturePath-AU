@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import localOpportunityDataset from '../../data/opportunities.json';
-import { DEMO_REFERENCE_DATE, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
+import { localCalendarDate, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
 import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
 
 /**
@@ -222,6 +222,26 @@ function IconPrinter({ size = 15, className = "" }) {
 // eligibilityInput is an internal integration seam, not a backend wire contract.
 // It stays null in main.jsx until an agreed transport/decoder is implemented.
 export default function App({ eligibilityInput = null } = {}) {
+  const [referenceDate, setReferenceDate] = useState(() => localCalendarDate());
+  useEffect(() => {
+    let timer;
+    const refreshDate = () => {
+      clearTimeout(timer);
+      const now = new Date();
+      setReferenceDate(localCalendarDate(now));
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      // Also recheck clock/timezone changes while the app remains open.
+      timer = setTimeout(refreshDate, Math.min(60000, midnight.getTime() - now.getTime()));
+    };
+    refreshDate();
+    window.addEventListener('focus', refreshDate);
+    document.addEventListener('visibilitychange', refreshDate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', refreshDate);
+      document.removeEventListener('visibilitychange', refreshDate);
+    };
+  }, []);
   // ---------------------------------------------------------------------------
   // [HAK-02] State: Student Profile & Goal Form
   // ---------------------------------------------------------------------------
@@ -523,7 +543,7 @@ export default function App({ eligibilityInput = null } = {}) {
         : {
             title: `Check Application Availability with ${opportunity.provider}`,
             description: `Check ${opportunity.source_url} to confirm current application availability and review the published requirements. If the provider is accepting applications, any submission must be student-initiated. A deadline does not confirm eligibility.`,
-            timeline: deadline.status === 'rolling' ? 'Open all year (published; check source)' : `Published closing date (${formatDate(opportunity.deadline.date)})`
+            timeline: deadline.status === 'rolling' ? 'Rolling applications – no fixed closing date' : `Published closing date (${formatDate(opportunity.deadline.date)})`
           };
 
     // Generate editable preparation guidance without inferring eligibility gaps.
@@ -1036,7 +1056,7 @@ export default function App({ eligibilityInput = null } = {}) {
 
           <aside className="dataset-notice" role="note" aria-label="Opportunity data source">
             <strong>{backendDataSource === 'live-fastapi' ? 'Source: FastAPI opportunity API' : 'Development fallback: data/opportunities.json (bundled local copy)'}</strong>
-            <p>Demo reference date: 28 November 2026 ({DEMO_REFERENCE_DATE}). Closed and past rounds remain visible for research and planning.</p>
+            <p>Deadlines calculated using your current local date: {formatDate(referenceDate)} ({referenceDate}). Closed and past rounds remain visible for research and planning.</p>
             <p>Deadline information does not confirm that applications are currently open or that you meet eligibility requirements. Check the official source before applying.</p>
             {datasetNote && <p>{datasetNote}</p>}
           </aside>
@@ -1129,7 +1149,7 @@ export default function App({ eligibilityInput = null } = {}) {
           {!isLoading && filteredOpportunities.length > 0 && (
             <div className="opportunities-grid" id="opportunities-grid">
               {visibleOpportunities.map((opportunity) => {
-                const deadlineEvaluation = evaluateDeadline(opportunity.deadline);
+                const deadlineEvaluation = evaluateDeadline(opportunity.deadline, referenceDate);
                 const prereqList = opportunity.eligibility_conditions;
 
                 // Count only validated backend outcomes; missing results stay neutral.
@@ -1150,7 +1170,7 @@ export default function App({ eligibilityInput = null } = {}) {
                         <span className={`badge ${opportunity.record_type === 'synthetic' ? 'badge-uncertain' : 'badge-category'}`}>
                           {opportunity.record_type === 'synthetic' ? 'SYNTHETIC - demonstration only' : 'Real record'}
                         </span>
-                        <span className={`badge ${deadlineEvaluation.badgeClass}`} title="Deterministic deadline status">
+                        <span className={`badge ${deadlineEvaluation.badgeClass}`} title="Deadline status based on your local calendar date">
                           {deadlineEvaluation.label}
                         </span>
                       </div>
