@@ -3,6 +3,8 @@ import json
 import sqlite3
 from contextlib import closing
 
+from pydantic import BaseModel
+from eligibility import evaluate_condition
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,7 +26,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173"
     ],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"]
 )
 
@@ -155,3 +157,47 @@ def get_opportunities():
             status_code=500,
             detail="Unable to retrieve opportunity records."
         ) from error
+
+# Define the information accepted by the eligibility API.
+class EligibilityRequest(BaseModel):
+    opportunity_id: str
+    profile: dict[str, object]
+
+
+# Evaluate published conditions against a submitted profile.
+@app.post("/api/eligibility/evaluate")
+def evaluate_eligibility(request: EligibilityRequest):
+
+    # Reuse our existing SQLite-backed opportunity reader.
+    dataset = get_opportunities()
+
+    # Find the selected opportunity using its original ID.
+    opportunity = next(
+        (
+            item for item in dataset["opportunities"]
+            if item["id"] == request.opportunity_id
+        ),
+        None
+    )
+
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Opportunity not found."
+        )
+
+    # Evaluate each published requirement independently.
+    results = [
+        evaluate_condition(condition, request.profile)
+        for condition in opportunity["eligibility_conditions"]
+    ]
+
+    return {
+        "opportunity_id": opportunity["id"],
+        "results": results,
+        "notice": (
+            "These comparisons are informational only. "
+            "They do not represent an official eligibility "
+            "or admission decision."
+        )
+    }
