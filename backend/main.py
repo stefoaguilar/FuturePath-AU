@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from eligibility import evaluate_condition
+from gap_analysis import analyse_opportunity_gaps
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -161,7 +162,8 @@ def get_opportunities():
 
 
 # Define the student profile fields and accepted values.
-# This model is prepared but not yet connected to the API request.
+# Define the validated student profile shared by
+# the eligibility and gap-analysis endpoints.
 class ProfileInput(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -289,3 +291,39 @@ def evaluate_eligibility(request: EligibilityRequest):
             "or admission decision."
         )
     }
+
+# Analyse published requirements and advisory skill areas.
+@app.post("/api/gaps/analyse")
+def analyse_gaps(request: EligibilityRequest):
+
+    # Retrieve opportunities from our existing SQLite database.
+    dataset = get_opportunities()
+
+    # Find the opportunity selected by the student.
+    opportunity = next(
+        (
+            item for item in dataset["opportunities"]
+            if item["id"] == request.opportunity_id
+        ),
+        None
+    )
+
+    # Reject opportunity IDs that do not exist.
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Opportunity not found."
+        )
+
+    # Use the existing validated student profile.
+    # Never send identity answers to automatic evaluation.
+    profile_data = request.profile.model_dump(
+        exclude_unset=True,
+        exclude={"identity_answer"}
+    )
+
+    # Reuse the tested gap-analysis module.
+    return analyse_opportunity_gaps(
+        opportunity,
+        profile_data
+    )

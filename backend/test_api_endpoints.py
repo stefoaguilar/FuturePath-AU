@@ -1,5 +1,4 @@
 
-
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,8 +9,6 @@ from fastapi.testclient import TestClient
 from database import create_database
 from import_data import import_opportunities
 from main import app
-
-
 
 
 class TestAPIEndpoints(unittest.TestCase):
@@ -44,6 +41,9 @@ class TestAPIEndpoints(unittest.TestCase):
         # Initialise the FastAPI testing client.
         cls.client = TestClient(app)
 
+    # --------------------------------------------------
+    # Existing API tests
+    # --------------------------------------------------
 
     def test_health_endpoint(self):
         response = self.client.get("/health")
@@ -89,14 +89,20 @@ class TestAPIEndpoints(unittest.TestCase):
         }
 
         self.assertEqual(len(statuses), 6)
+
         self.assertEqual(
-            statuses["OPP-003-E1"], "uncertain"
+            statuses["OPP-003-E1"],
+            "uncertain"
         )
+
         self.assertEqual(
-            statuses["OPP-003-E2"], "satisfied"
+            statuses["OPP-003-E2"],
+            "satisfied"
         )
+
         self.assertEqual(
-            statuses["OPP-003-E4"], "satisfied"
+            statuses["OPP-003-E4"],
+            "satisfied"
         )
 
         self.assertIn("informational", data["notice"])
@@ -115,6 +121,7 @@ class TestAPIEndpoints(unittest.TestCase):
         results = response.json()["results"]
 
         self.assertEqual(len(results), 6)
+
         self.assertTrue(
             all(
                 item["status"] == "uncertain"
@@ -148,6 +155,7 @@ class TestAPIEndpoints(unittest.TestCase):
         results = response.json()["results"]
 
         self.assertEqual(len(results), 6)
+
         self.assertTrue(
             all(
                 item["status"] == "uncertain"
@@ -175,10 +183,13 @@ class TestAPIEndpoints(unittest.TestCase):
         }
 
         self.assertEqual(
-            statuses["OPP-003-E2"], "unmet"
+            statuses["OPP-003-E2"],
+            "unmet"
         )
+
         self.assertEqual(
-            statuses["OPP-003-E4"], "satisfied"
+            statuses["OPP-003-E4"],
+            "satisfied"
         )
 
     def test_invalid_citizenship_returns_422(self):
@@ -199,7 +210,9 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertTrue(
             any(
                 error["loc"] == [
-                    "body", "profile", "citizenship_status"
+                    "body",
+                    "profile",
+                    "citizenship_status"
                 ]
                 for error in errors
             )
@@ -237,6 +250,7 @@ class TestAPIEndpoints(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
         self.assertEqual(
             response.json()["detail"],
             "Opportunity not found."
@@ -251,6 +265,126 @@ class TestAPIEndpoints(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 422)
+
+    # --------------------------------------------------
+    # STE-05: Gap-analysis API tests
+    # --------------------------------------------------
+
+    def test_gap_analysis_valid_profile(self):
+        response = self.client.post(
+            "/api/gaps/analyse",
+            json={
+                "opportunity_id": "OPP-003",
+                "profile": {
+                    "citizenship_status": "nz_citizen",
+                    "weighted_average": 65,
+                    "skills": ["cyber security"]
+                }
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertEqual(
+            data["opportunity_id"],
+            "OPP-003"
+        )
+
+        unmet_ids = [
+            item["condition_id"]
+            for item in data["confirmed_unmet_requirements"]
+        ]
+
+        review_ids = [
+            item["condition_id"]
+            for item in data["requirements_needing_review"]
+        ]
+
+        # The Australian citizenship requirement is unmet.
+        self.assertEqual(
+            unmet_ids,
+            ["OPP-003-E2"]
+        )
+
+        # Unsupported conditions must remain uncertain.
+        self.assertEqual(
+            review_ids,
+            [
+                "OPP-003-E1",
+                "OPP-003-E3",
+                "OPP-003-E5",
+                "OPP-003-E6"
+            ]
+        )
+
+        # Cyber security is already reported by the student.
+        # Other skill areas are advisory only.
+        self.assertEqual(
+            data["skills_to_explore"],
+            [
+                "computing",
+                "software engineering",
+                "data science",
+                "networking"
+            ]
+        )
+
+        # Preserve the source and advisory disclaimer.
+        self.assertIn("source_url", data)
+
+        self.assertIn(
+            "not verified missing",
+            data["notice"]
+        )
+
+    def test_gap_analysis_unknown_opportunity(self):
+        response = self.client.post(
+            "/api/gaps/analyse",
+            json={
+                "opportunity_id": "OPP-999",
+                "profile": {}
+            }
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(
+            response.json()["detail"],
+            "Opportunity not found."
+        )
+
+    def test_gap_analysis_invalid_profile(self):
+        response = self.client.post(
+            "/api/gaps/analyse",
+            json={
+                "opportunity_id": "OPP-003",
+                "profile": {
+                    "citizenship_status": "banana",
+                    "weighted_average": 150
+                }
+            }
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        errors = response.json()["detail"]
+
+        invalid_fields = {
+            error["loc"][-1]
+            for error in errors
+        }
+
+        self.assertIn(
+            "citizenship_status",
+            invalid_fields
+        )
+
+        self.assertIn(
+            "weighted_average",
+            invalid_fields
+        )
 
 
 if __name__ == "__main__":
