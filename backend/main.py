@@ -2,8 +2,9 @@
 import json
 import sqlite3
 from contextlib import closing
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from eligibility import evaluate_condition
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -158,10 +159,87 @@ def get_opportunities():
             detail="Unable to retrieve opportunity records."
         ) from error
 
+
+# Define the student profile fields and accepted values.
+# This model is prepared but not yet connected to the API request.
+class ProfileInput(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True
+    )
+
+    education_level: Literal[
+        "undergraduate",
+        "postgraduate",
+        "vocational",
+        "school_leaver",
+        "graduate",
+        "not_stated"
+    ] = "not_stated"
+
+    enrolment_status: Literal[
+        "enrolled_full_time",
+        "enrolled_part_time",
+        "commencing",
+        "not_enrolled",
+        "not_stated"
+    ] = "not_stated"
+
+    institution: str = ""
+
+    citizenship_status: Literal[
+        "australian_citizen",
+        "permanent_resident",
+        "nz_citizen",
+        "other",
+        "not_stated"
+    ] = "not_stated"
+
+    state: Literal[
+        "ACT",
+        "NSW",
+        "NT",
+        "QLD",
+        "SA",
+        "TAS",
+        "VIC",
+        "WA",
+        "not_stated"
+    ] = "not_stated"
+
+    field_of_study: str = ""
+
+    weighted_average: float | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        allow_inf_nan=False
+    )
+
+    skills: list[str] = Field(
+        default_factory=list
+    )
+
+    experience_notes: str = ""
+
+    preferred_agencies: list[str] = Field(
+        default_factory=list
+    )
+
+    identity_answer: Literal[
+        "yes",
+        "no",
+        "prefer_not_to_say",
+        "not_stated"
+    ] = "not_stated"
+
+
 # Define the information accepted by the eligibility API.
+# Existing request format is preserved for compatibility.
 class EligibilityRequest(BaseModel):
     opportunity_id: str
-    profile: dict[str, object]
+    profile: ProfileInput
+
 
 
 # Evaluate published conditions against a submitted profile.
@@ -186,11 +264,21 @@ def evaluate_eligibility(request: EligibilityRequest):
             detail="Opportunity not found."
         )
 
+    
+    # Convert the validated profile into a dictionary.
+    # Preserve only fields explicitly supplied by the student.
+    # Identity answers are never used for automatic scoring.
+    profile_data = request.profile.model_dump(
+        exclude_unset=True,
+        exclude={"identity_answer"}
+    )
+
     # Evaluate each published requirement independently.
     results = [
-        evaluate_condition(condition, request.profile)
+        evaluate_condition(condition, profile_data)
         for condition in opportunity["eligibility_conditions"]
     ]
+
 
     return {
         "opportunity_id": opportunity["id"],
