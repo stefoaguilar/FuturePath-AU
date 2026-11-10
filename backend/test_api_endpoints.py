@@ -387,5 +387,84 @@ class TestAPIEndpoints(unittest.TestCase):
         )
 
 
+    # --------------------------------------------------
+    # STE-06: Deadline-tracking API tests
+    # --------------------------------------------------
+
+    def test_deadline_future(self):
+        response = self.client.get(
+            "/api/deadlines/OPP-030",
+            params={"reference_date": "2026-11-10"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertEqual(data["opportunity_id"], "OPP-030")
+        self.assertEqual(data["classification"], "deadline_future")
+        self.assertEqual(data["deadline_date"], "2026-11-30")
+        self.assertEqual(data["days_until_deadline"], 20)
+        self.assertEqual(data["reference_date"], "2026-11-10")
+        self.assertEqual(data["verification_status"], "verified")
+        self.assertIn("Round 2", data["deadline_note"])
+
+    def test_deadline_passed(self):
+        response = self.client.get(
+            "/api/deadlines/OPP-004",
+            params={"reference_date": "2026-11-10"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["classification"],
+            "deadline_passed"
+        )
+        self.assertEqual(
+            response.json()["days_until_deadline"],
+            -10
+        )
+
+    def test_deadline_unknown(self):
+        response = self.client.get(
+            "/api/deadlines/OPP-001",
+            params={"reference_date": "2026-11-10"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertEqual(data["classification"], "unknown")
+        self.assertIsNone(data["days_until_deadline"])
+
+    def test_deadline_conflicting_verification(self):
+        response = self.client.get(
+            "/api/deadlines/OPP-002",
+            params={"reference_date": "2026-11-10"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertEqual(data["classification"], "needs_review")
+        self.assertEqual(
+            data["verification_status"],
+            "conflicting"
+        )
+
+    def test_deadline_unknown_opportunity(self):
+        response = self.client.get(
+            "/api/deadlines/OPP-999",
+            params={"reference_date": "2026-11-10"}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.json()["detail"],
+            "Opportunity not found."
+        )
+
 if __name__ == "__main__":
     unittest.main()

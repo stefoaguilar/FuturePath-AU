@@ -2,15 +2,17 @@
 import json
 import sqlite3
 from contextlib import closing
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from eligibility import evaluate_condition
-from gap_analysis import analyse_opportunity_gaps
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import DATABASE_PATH
+from eligibility import evaluate_condition
+from gap_analysis import analyse_opportunity_gaps
+from deadline_tracking import analyse_opportunity_deadline
 
 
 # Create the FuturePath AU backend application.
@@ -33,6 +35,10 @@ app.add_middleware(
 )
 
 
+# --------------------------------------------------
+# Basic API endpoints
+# --------------------------------------------------
+
 # Existing homepage endpoint.
 @app.get("/")
 def home():
@@ -51,6 +57,10 @@ def health_check():
         "message": "FuturePath AU API is operational"
     }
 
+
+# --------------------------------------------------
+# STE-03: SQLite opportunity retrieval
+# --------------------------------------------------
 
 # Retrieve opportunity records from SQLite.
 @app.get("/api/opportunities")
@@ -137,7 +147,9 @@ def get_opportunities():
                     "source_url": row["source_url"],
                     "eligibility_conditions": conditions,
                     "deadline": json.loads(row["deadline_json"]),
-                    "verification": json.loads(row["verification_json"]),
+                    "verification": json.loads(
+                        row["verification_json"]
+                    ),
                     "data_notes": row["data_notes"]
                 }
 
@@ -161,7 +173,10 @@ def get_opportunities():
         ) from error
 
 
-# Define the student profile fields and accepted values.
+# --------------------------------------------------
+# STE-04: Student profile validation
+# --------------------------------------------------
+
 # Define the validated student profile shared by
 # the eligibility and gap-analysis endpoints.
 class ProfileInput(BaseModel):
@@ -243,6 +258,9 @@ class EligibilityRequest(BaseModel):
     profile: ProfileInput
 
 
+# --------------------------------------------------
+# STE-04: Eligibility evaluation
+# --------------------------------------------------
 
 # Evaluate published conditions against a submitted profile.
 @app.post("/api/eligibility/evaluate")
@@ -266,7 +284,6 @@ def evaluate_eligibility(request: EligibilityRequest):
             detail="Opportunity not found."
         )
 
-    
     # Convert the validated profile into a dictionary.
     # Preserve only fields explicitly supplied by the student.
     # Identity answers are never used for automatic scoring.
@@ -281,7 +298,6 @@ def evaluate_eligibility(request: EligibilityRequest):
         for condition in opportunity["eligibility_conditions"]
     ]
 
-
     return {
         "opportunity_id": opportunity["id"],
         "results": results,
@@ -291,6 +307,11 @@ def evaluate_eligibility(request: EligibilityRequest):
             "or admission decision."
         )
     }
+
+
+# --------------------------------------------------
+# STE-05: Prerequisite gap analysis
+# --------------------------------------------------
 
 # Analyse published requirements and advisory skill areas.
 @app.post("/api/gaps/analyse")
@@ -326,4 +347,50 @@ def analyse_gaps(request: EligibilityRequest):
     return analyse_opportunity_gaps(
         opportunity,
         profile_data
+    )
+
+
+# --------------------------------------------------
+# STE-06: Deadline tracking
+# --------------------------------------------------
+
+# Retrieve deadline information for a selected opportunity.
+@app.get("/api/deadlines/{opportunity_id}")
+def get_opportunity_deadline(
+    opportunity_id: str,
+    reference_date: date | None = None
+):
+
+    # Retrieve the existing SQLite-backed catalogue.
+    dataset = get_opportunities()
+
+    # Find the requested opportunity.
+    opportunity = next(
+        (
+            item for item in dataset["opportunities"]
+            if item["id"] == opportunity_id
+        ),
+        None
+    )
+
+    # Reject unknown opportunity IDs.
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Opportunity not found."
+        )
+
+    # Use the server's current local date unless a
+    # reference date is explicitly supplied.
+    # A supplied date allows reproducible testing.
+    evaluation_date = (
+        reference_date
+        if reference_date is not None
+        else date.today()
+    )
+
+    # Reuse the tested deadline-tracking module.
+    return analyse_opportunity_deadline(
+        opportunity,
+        evaluation_date
     )
