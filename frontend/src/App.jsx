@@ -300,19 +300,48 @@ export default function App({ eligibilityInput = null } = {}) {
     eligibilityRequest.current = null;
     setRuntimeEligibility(null);
   };
-  const evaluateProfile = async () => {
+  const evaluateSelectedOpportunity = async (opportunity) => {
     cancelEligibility();
-    if (isLoading || opportunityRequest.current) {
-      setRuntimeEligibility({ batch: emptyEligibility('unavailable', 'Opportunities are loading. Submit again after loading completes.'),
-        profileSnapshot: activeUserProfile, opportunities });
+
+    if (!profileSubmitted) {
       return;
     }
+
+    if (isLoading || opportunityRequest.current) {
+      setRuntimeEligibility({
+        profileSnapshot: activeUserProfile,
+        opportunities,
+        batch: emptyEligibility(
+          'unavailable',
+          'Opportunities are loading. Try again when loading completes.'
+        )
+      });
+      return;
+    }
+
     const controller = new AbortController();
     eligibilityRequest.current = controller;
-    const snapshot = { profileSnapshot: activeUserProfile, opportunities };
-    setRuntimeEligibility({ ...snapshot, batch: emptyEligibility('loading') });
-    const batch = await evaluateOpportunities(activeUserProfile, opportunities, { signal: controller.signal });
-    if (eligibilityRequest.current === controller && !controller.signal.aborted) {
+
+    const snapshot = {
+      profileSnapshot: activeUserProfile,
+      opportunities
+    };
+
+    setRuntimeEligibility({
+      ...snapshot,
+      batch: emptyEligibility('loading')
+    });
+
+    const batch = await evaluateOpportunities(
+      activeUserProfile,
+      [opportunity],
+      { signal: controller.signal }
+    );
+
+    if (
+      eligibilityRequest.current === controller &&
+      !controller.signal.aborted
+    ) {
       eligibilityRequest.current = null;
       setRuntimeEligibility({ ...snapshot, batch });
     }
@@ -513,9 +542,18 @@ export default function App({ eligibilityInput = null } = {}) {
     if (!careerGoal.trim()) {
       errors.careerGoal = 'Please specify your Cybersecurity Career Goal.';
     }
-    if (weightedAverageInvalid || (activeUserProfile.weighted_average !== null &&
-        !Number.isFinite(activeUserProfile.weighted_average))) {
-      errors.weighted_average = 'Enter a valid finite number, or leave weighted average blank.';
+    const average = activeUserProfile.weighted_average;
+
+    if (
+      weightedAverageInvalid ||
+      (average !== null && (
+        !Number.isFinite(average) ||
+        average < 0 ||
+        average > 100
+      ))
+    ) {
+      errors.weighted_average =
+        'Enter a weighted average between 0 and 100, or leave it blank.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -527,7 +565,6 @@ export default function App({ eligibilityInput = null } = {}) {
 
     setFormErrors({});
     setProfileSubmitted(true);
-    evaluateProfile();
   };
 
   // ---------------------------------------------------------------------------
@@ -854,7 +891,7 @@ export default function App({ eligibilityInput = null } = {}) {
             </span>
           </div>
           <p className="section-description">
-            Define your cybersecurity aspirations and background. Only the career goal is required. Blank or not stated answers mean information is unavailable. Submitting validates input format and sends your profile, excluding your voluntary identity answer, to the backend to compare published conditions.
+            Define your cybersecurity aspirations and background. Only the career goal is required. Blank or not stated answers mean information is unavailable. Submitting validates your profile inputs. You can then select an opportunity and request a backend eligibility evaluation. Your voluntary identity answer is excluded from automated evaluation.
           </p>
 
           <form onSubmit={handleProfileSubmit} noValidate className="profile-form">
@@ -1053,7 +1090,7 @@ export default function App({ eligibilityInput = null } = {}) {
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
-                Validate Profile Inputs &amp; Evaluate Conditions
+                Validate Profile Inputs
               </button>
               <button
                 type="button"
@@ -1320,6 +1357,15 @@ export default function App({ eligibilityInput = null } = {}) {
 
                       {/* Action to Generate / Populate Pathway */}
                       <div className="card-action-bar">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => evaluateSelectedOpportunity(opportunity)}
+                          disabled={!profileSubmitted || isLoading}
+                        >
+                          Evaluate Eligibility Conditions
+                        </button>
+
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"

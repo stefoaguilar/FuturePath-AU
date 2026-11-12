@@ -30,6 +30,25 @@ function cardNode(ui, owner = opportunity) {
   return ui.find((node) => node.props['data-opportunity-id'] === owner.id);
 }
 
+// Find and click the evaluation button inside a specific opportunity card.
+function evaluateCard(ui, owner = opportunity) {
+  const descendants = (node) => {
+    if (Array.isArray(node)) return node.flatMap(descendants);
+    if (!node || !node.props) return [];
+    return [node, ...descendants(node.props.children)];
+  };
+
+  const buttons = descendants(cardNode(ui, owner)).filter(
+    (node) =>
+      node.type === 'button' &&
+      ui.text(node).includes('Evaluate Eligibility Conditions')
+  );
+
+  assert.equal(buttons.length, 1);
+  buttons[0].props.onClick();
+  ui.render();
+}
+
 for (const status of ['satisfied', 'unmet', 'uncertain']) {
   test(`validated ${status} result maps to its label, styling and backend explanation`, () => {
     const result = adapt([row(status)]);
@@ -307,47 +326,168 @@ test('transport sends one POST per loaded opportunity, excludes identity, and li
   assert.equal(JSON.stringify(profile), original);
 });
 
-test('submission displays validated backend decisions and notice without changing published evidence', async () => {
+test('selected opportunity displays validated backend decisions without changing published evidence', async () => {
   const requests = [];
-  const ui = harness({ fetchImpl: async (url, options) => {
-    const body = JSON.parse(options.body); requests.push(body);
-    return ok(wireResponse(records.find((r) => r.id === body.opportunity_id), 'satisfied'));
-  } });
+
+  const ui = harness({
+    fetchImpl: async (url, options) => {
+      const body = JSON.parse(options.body);
+      requests.push(body);
+
+      assert.equal(
+        url,
+        'http://127.0.0.1:8000/api/eligibility/evaluate'
+      );
+
+      return ok(
+        wireResponse(
+          records.find((r) => r.id === body.opportunity_id),
+          'satisfied'
+        )
+      );
+    }
+  });
+
   ui.change('citizenship_status', 'australian_citizen');
-  ui.change('weighted_average', '65', { validity: { badInput: false }, valueAsNumber: 65 });
+  ui.change('weighted_average', '65', {
+    validity: { badInput: false },
+    valueAsNumber: 65
+  });
   ui.change('identity_answer', 'yes');
+
+  // Profile submission must not evaluate opportunities automatically.
   ui.submit();
+  assert.equal(requests.length, 0);
+
+  // Click Evaluate Eligibility Conditions for OPP-003 only.
+  evaluateCard(ui, opportunity);
+
   assert.match(ui.markup(), /Evaluating published conditions/);
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
-  await settle(); ui.render();
-  assert.equal(requests.length, records.length);
+
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'not_yet_evaluated'
+  );
+
+  await settle();
+  ui.render();
+
+  // Exactly one POST request for the selected opportunity.
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].opportunity_id, opportunity.id);
   assert.equal(requests[0].profile.weighted_average, 65);
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'satisfied');
-  assert.equal(conditionNode(ui, identity).props['data-eligibility-status'], 'uncertain');
-  assert.match(ui.text(conditionNode(ui)), /Backend comparison for this profile/);
-  assert.ok(ui.text(conditionNode(ui)).includes(ordinary[0].evidence_summary));
-  assert.match(ui.markup(), /These comparisons are informational only/);
+
+  // Identity information must never be sent to the backend.
+  assert.equal(
+    Object.hasOwn(requests[0].profile, 'identity_answer'),
+    false
+  );
+
+  // Ordinary conditions display accepted backend results.
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'satisfied'
+  );
+
+  // The selected opportunity's identity condition remains uncertain.
+  const selectedIdentity = opportunity.eligibility_conditions.find(
+    (condition) => condition.type === 'identity_requirement'
+  );
+
+  assert.ok(selectedIdentity);
+
+  assert.equal(
+    conditionNode(ui, selectedIdentity).props['data-eligibility-status'],
+    'uncertain'
+  );
+
+  // Another opportunity must remain unevaluated.
+  assert.equal(
+    conditionNode(ui, identity).props['data-eligibility-status'],
+    'not_yet_evaluated'
+  );
+
+  // Backend explanations and original evidence must remain intact.
+  assert.match(
+    ui.text(conditionNode(ui)),
+    /Backend comparison for this profile/
+  );
+
+  assert.ok(
+    ui.text(conditionNode(ui)).includes(ordinary[0].evidence_summary)
+  );
+
+  assert.match(
+    ui.markup(),
+    /These comparisons are informational only/
+  );
 });
 
 test('network, HTTP, invalid JSON and malformed batches stay neutral and do not leak private errors', async () => {
   for (const fetchImpl of [
     async () => { throw new Error('PRIVATE_NETWORK_DETAILS'); },
     async () => ({ ok: false, status: 422 }),
-    async () => ({ ok: true, json: async () => { throw new Error('PRIVATE_JSON_DETAILS'); } }),
-    async () => ok({ opportunity_id: 'OPP-999', results: [], notice: 'Test' })
+    async () => ({
+      ok: true,
+      json: async () => {
+        throw new Error('PRIVATE_JSON_DETAILS');
+      }
+    }),
+    async () => ok({
+      opportunity_id: 'OPP-999',
+      results: [],
+      notice: 'Test'
+    })
   ]) {
-    const ui = harness({ fetchImpl });
-    ui.submit(); await settle(); ui.render();
-    assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
-    assert.match(ui.markup(), /Could not connect|unsuccessful response|Eligibility response rejected/);
+    let requests = 0;
+
+    const ui = harness({
+      fetchImpl: async (...args) => {
+        requests++;
+        return fetchImpl(...args);
+      }
+    });
+
+    // Profile validation alone must not send API requests.
+    ui.submit();
+    assert.equal(requests, 0);
+
+    // Request eligibility for the selected opportunity only.
+    evaluateCard(ui, opportunity);
+
+    await settle();
+    ui.render();
+
+    assert.equal(requests, 1);
+
+    // Failed evaluations must remain neutral.
+    assert.equal(
+      conditionNode(ui).props['data-eligibility-status'],
+      'not_yet_evaluated'
+    );
+
+    // Display safe error messages without private details.
+    assert.match(
+      ui.markup(),
+      /Could not connect|unsuccessful response|Eligibility response rejected/
+    );
+
     assert.doesNotMatch(ui.markup(), /PRIVATE_/);
   }
-  const result = await evaluateOpportunities(harness().profile(), records, { fetchImpl: async (_url, options) => {
-    const owner = records.find((r) => r.id === JSON.parse(options.body).opportunity_id);
-    const payload = wireResponse(owner, 'satisfied');
-    if (owner.id === records[3].id) payload.results.push(payload.results[0]);
-    return ok(payload);
-  } });
+
+  // Duplicate condition results must reject the entire response.
+  const result = await evaluateOpportunities(
+    harness().profile(),
+    [opportunity],
+    {
+      fetchImpl: async () => {
+        const payload = wireResponse(opportunity, 'satisfied');
+        payload.results.push(payload.results[0]);
+        return ok(payload);
+      }
+    }
+  );
+
   assert.equal(result.results.size, 0);
   assert.match(result.warning, /rejected/);
 });
@@ -406,42 +546,130 @@ test('profile edits, including identity changes and alternate profiles, cancel r
   for (const edit of [
     (ui) => ui.change('citizenship_status', 'other'),
     (ui) => ui.change('identity_answer', 'no'),
-    (ui) => { ui.button('Load Alternate Test Profile').props.onClick(); ui.render(); }
+    (ui) => {
+      ui.button('Load Alternate Test Profile').props.onClick();
+      ui.render();
+    }
   ]) {
-    const pending = [], signals = [];
-    const ui = harness({ fetchImpl: (_url, options) => {
-      const owner = records.find((r) => r.id === JSON.parse(options.body).opportunity_id);
-      signals.push(options.signal);
-      return new Promise((resolve) => pending.push(() => resolve(ok(wireResponse(owner, 'satisfied')))));
-    } });
-    ui.submit(); edit(ui);
-    assert.ok(signals.every((signal) => signal.aborted));
+    const pending = [];
+    const signals = [];
+
+    const ui = harness({
+      fetchImpl: (_url, options) => {
+        const owner = records.find(
+          (r) => r.id === JSON.parse(options.body).opportunity_id
+        );
+
+        signals.push(options.signal);
+
+        return new Promise((resolve) => {
+          pending.push(() => resolve(ok(wireResponse(owner, 'satisfied'))));
+        });
+      }
+    });
+
+    // Validate the profile without automatically evaluating opportunities.
+    ui.submit();
+    assert.equal(signals.length, 0);
+
+    // Start one request for the selected opportunity.
+    evaluateCard(ui, opportunity);
+    assert.equal(signals.length, 1);
+
+    // Editing the profile must cancel that request.
+    edit(ui);
+
+    assert.equal(signals[0].aborted, true);
+
+    // Even if the old request completes, its result must not appear.
     pending.forEach((resolve) => resolve());
-    await settle(); ui.render();
-    assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
-    assert.equal(signals.length, 3);
+
+    await settle();
+    ui.render();
+
+    assert.equal(
+      conditionNode(ui).props['data-eligibility-status'],
+      'not_yet_evaluated'
+    );
   }
 });
 
-test('newer submissions and dataset refreshes cannot be overwritten by old evaluation responses', async () => {
-  const older = [], signals = [];
+test('newer selected evaluations and dataset refreshes cannot be overwritten by old responses', async () => {
+  const older = [];
+  const signals = [];
   let first = true;
-  const ui = harness({ fetchImpl: async (url, options) => {
-    if (!url.endsWith('/evaluate')) return ok({ opportunities: records.slice(0, 2) });
-    const owner = records.find((r) => r.id === JSON.parse(options.body).opportunity_id);
-    signals.push(options.signal);
-    if (first) return new Promise((resolve) => older.push(() => resolve(ok(wireResponse(owner, 'unmet')))));
-    return ok(wireResponse(owner, 'satisfied'));
-  } });
-  ui.submit(); first = false; ui.submit();
-  assert.ok(signals.slice(0, 3).every((signal) => signal.aborted));
-  await settle(); ui.render();
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'satisfied');
-  older.forEach((resolve) => resolve()); await settle(); ui.render();
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'satisfied');
-  await ui.button('Check API Status').props.onClick(); ui.render();
-  assert.ok(ui.nodes().filter((node) => node.props['data-condition-id']).every((node) =>
-    node.props['data-eligibility-status'] === 'not_yet_evaluated'));
+  let evaluationRequests = 0;
+
+  const ui = harness({
+    fetchImpl: async (url, options) => {
+      if (!url.endsWith('/evaluate')) {
+        return ok({ opportunities: records.slice(0, 2) });
+      }
+
+      const owner = records.find(
+        (r) => r.id === JSON.parse(options.body).opportunity_id
+      );
+
+      signals.push(options.signal);
+      evaluationRequests++;
+
+      if (first) {
+        return new Promise((resolve) => {
+          older.push(() => resolve(ok(wireResponse(owner, 'unmet'))));
+        });
+      }
+
+      return ok(wireResponse(owner, 'satisfied'));
+    }
+  });
+
+  // Profile submission must not initiate an evaluation.
+  ui.submit();
+  assert.equal(evaluationRequests, 0);
+
+  // First evaluation remains pending.
+  evaluateCard(ui, opportunity);
+  assert.equal(evaluationRequests, 1);
+
+  // A second evaluation cancels the first.
+  first = false;
+  evaluateCard(ui, opportunity);
+
+  assert.equal(evaluationRequests, 2);
+  assert.equal(signals[0].aborted, true);
+
+  await settle();
+  ui.render();
+
+  // The newer successful result must be displayed.
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'satisfied'
+  );
+
+  // Completing the old request must not overwrite the new result.
+  older.forEach((resolve) => resolve());
+
+  await settle();
+  ui.render();
+
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'satisfied'
+  );
+
+  // Refreshing the dataset invalidates previous eligibility results.
+  await ui.button('Check API Status').props.onClick();
+  ui.render();
+
+  assert.ok(
+    ui.nodes()
+      .filter((node) => node.props['data-condition-id'])
+      .every(
+        (node) =>
+          node.props['data-eligibility-status'] === 'not_yet_evaluated'
+      )
+  );
 });
 
 test('dataset changes and component cleanup abort pending eligibility requests', async () => {
@@ -474,37 +702,128 @@ test('invalid profile inputs send no evaluation requests', () => {
 
 test('a failed retry clears previously validated results instead of retaining old decisions', async () => {
   let fail = false;
-  const ui = harness({ fetchImpl: async (_url, options) => {
-    if (fail) throw new Error('PRIVATE_FAILURE');
-    return ok(wireResponse(records.find((r) => r.id === JSON.parse(options.body).opportunity_id), 'satisfied'));
-  } });
-  ui.submit(); await settle(); ui.render();
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'satisfied');
-  fail = true;
+  let requests = 0;
+
+  const ui = harness({
+    fetchImpl: async (_url, options) => {
+      requests++;
+
+      if (fail) {
+        throw new Error('PRIVATE_FAILURE');
+      }
+
+      const owner = records.find(
+        (r) => r.id === JSON.parse(options.body).opportunity_id
+      );
+
+      return ok(wireResponse(owner, 'satisfied'));
+    }
+  });
+
+  // Profile validation does not trigger an eligibility request.
   ui.submit();
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
-  await settle(); ui.render();
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'not_yet_evaluated');
+  assert.equal(requests, 0);
+
+  // First evaluation succeeds for the selected opportunity.
+  evaluateCard(ui, opportunity);
+
+  await settle();
+  ui.render();
+
+  assert.equal(requests, 1);
+
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'satisfied'
+  );
+
+  // Simulate backend failure during a second evaluation.
+  fail = true;
+  evaluateCard(ui, opportunity);
+
+  // Previous results must disappear immediately.
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'not_yet_evaluated'
+  );
+
+  await settle();
+  ui.render();
+
+  assert.equal(requests, 2);
+
+  // Failed requests must not restore previous decisions.
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'not_yet_evaluated'
+  );
+
+  // Display a safe message without exposing private error details.
   assert.match(ui.markup(), /Could not connect/);
   assert.doesNotMatch(ui.markup(), /PRIVATE_FAILURE/);
 });
 
-test('submission during opportunity loading waits for a stable dataset and can be retried', async () => {
+test('selected evaluation waits for opportunity loading before requesting backend', async () => {
   const dataset = deferred();
   let requests = 0;
-  const ui = harness({ fetchImpl: async (url, options) => {
-    if (!url.endsWith('/evaluate')) return dataset.promise;
-    requests++;
-    return ok(wireResponse(records.find((r) => r.id === JSON.parse(options.body).opportunity_id)));
-  } });
+
+  const ui = harness({
+    fetchImpl: async (url, options) => {
+      if (!url.endsWith('/evaluate')) {
+        return dataset.promise;
+      }
+
+      requests++;
+
+      const owner = records.find(
+        (r) => r.id === JSON.parse(options.body).opportunity_id
+      );
+
+      return ok(wireResponse(owner));
+    }
+  });
+
   const cleanup = ui.runEffects();
+
+  // Profile validation must not trigger eligibility evaluation.
   ui.submit();
   assert.equal(requests, 0);
-  assert.match(ui.markup(), /Opportunities are loading/);
+
+  // Opportunity cards are unavailable while the dataset is loading.
+  assert.match(
+    ui.markup(),
+    /Fetching opportunities from FastAPI/
+  );
+
+  const evaluationButtons = ui.nodes().filter(
+    (node) =>
+      node.type === 'button' &&
+      ui.text(node).includes('Evaluate Eligibility Conditions')
+  );
+
+  assert.equal(evaluationButtons.length, 0);
+
+  // Complete the opportunity dataset request.
   dataset.resolve(ok({ opportunities: records }));
-  await settle(); ui.render();
-  ui.submit(); await settle(); ui.render();
-  assert.equal(requests, records.length);
-  assert.equal(conditionNode(ui).props['data-eligibility-status'], 'uncertain');
+
+  await settle();
+  ui.render();
+
+  // Loading the dataset must not automatically trigger evaluation.
+  assert.equal(requests, 0);
+
+  // The student can now evaluate one selected opportunity.
+  evaluateCard(ui, opportunity);
+
+  await settle();
+  ui.render();
+
+  assert.equal(requests, 1);
+
+  assert.equal(
+    conditionNode(ui).props['data-eligibility-status'],
+    'uncertain'
+  );
+
   cleanup();
 });
