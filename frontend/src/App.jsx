@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import localOpportunityDataset from '../../data/opportunities.json';
 import { localCalendarDate, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
-import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
+import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, evaluateOpportunities, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
 
 /**
  * ==============================================================================
@@ -219,8 +219,7 @@ function IconPrinter({ size = 15, className = "" }) {
   );
 }
 
-// eligibilityInput is an internal integration seam, not a backend wire contract.
-// It stays null in main.jsx until an agreed transport/decoder is implemented.
+// eligibilityInput remains an optional internal presentation-test seam.
 export default function App({ eligibilityInput = null } = {}) {
   const [referenceDate, setReferenceDate] = useState(() => localCalendarDate());
   useEffect(() => {
@@ -263,6 +262,7 @@ export default function App({ eligibilityInput = null } = {}) {
   const selectedSkills = profile.skills;
 
   const updateProfileField = (field, value) => {
+    cancelEligibility();
     setProfile((prev) => ({ ...prev, [field]: value }));
     setProfileSubmitted(false);
     setFormErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -293,15 +293,44 @@ export default function App({ eligibilityInput = null } = {}) {
   const [backendDataSource, setBackendDataSource] = useState('local-development');
   const [datasetNote, setDatasetNote] = useState(localOpportunityDataset.dataset_note);
   const opportunityRequest = useRef(null);
+  const eligibilityRequest = useRef(null);
+  const [runtimeEligibility, setRuntimeEligibility] = useState(null);
+  const cancelEligibility = () => {
+    eligibilityRequest.current?.abort();
+    eligibilityRequest.current = null;
+    setRuntimeEligibility(null);
+  };
+  const evaluateProfile = async () => {
+    cancelEligibility();
+    if (isLoading || opportunityRequest.current) {
+      setRuntimeEligibility({ batch: emptyEligibility('unavailable', 'Opportunities are loading. Submit again after loading completes.'),
+        profileSnapshot: activeUserProfile, opportunities });
+      return;
+    }
+    const controller = new AbortController();
+    eligibilityRequest.current = controller;
+    const snapshot = { profileSnapshot: activeUserProfile, opportunities };
+    setRuntimeEligibility({ ...snapshot, batch: emptyEligibility('loading') });
+    const batch = await evaluateOpportunities(activeUserProfile, opportunities, { signal: controller.signal });
+    if (eligibilityRequest.current === controller && !controller.signal.aborted) {
+      eligibilityRequest.current = null;
+      setRuntimeEligibility({ ...snapshot, batch });
+    }
+  };
 
   const eligibility = useMemo(() => {
+    if (eligibilityInput == null) {
+      if (!runtimeEligibility) return emptyEligibility();
+      if (runtimeEligibility.opportunities !== opportunities ||
+          !matchesProfileSnapshot(runtimeEligibility.profileSnapshot, activeUserProfile)) return emptyEligibility('stale');
+      return runtimeEligibility.batch;
+    }
     if (apiError || eligibilityInput?.unavailable) return emptyEligibility();
-    if (eligibilityInput == null) return emptyEligibility();
     if (!matchesProfileSnapshot(eligibilityInput.profileSnapshot, activeUserProfile)) {
       return emptyEligibility('stale', 'Eligibility results do not match the current profile. A new backend evaluation is required.');
     }
     return adaptEligibilityResults(eligibilityInput.payload, opportunities, eligibilityInput.decodeResponse);
-  }, [eligibilityInput, activeUserProfile, opportunities, apiError]);
+  }, [eligibilityInput, runtimeEligibility, activeUserProfile, opportunities, apiError]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -398,6 +427,7 @@ export default function App({ eligibilityInput = null } = {}) {
   // [HAK-03 & HAK-06] Fetch from FastAPI Backend with Fallback
   // ---------------------------------------------------------------------------
   const fetchOpportunitiesFromBackend = async () => {
+    cancelEligibility();
     const previous = opportunityRequest.current;
     const request = { controller: new AbortController(), timeoutId: null, timedOut: false };
     opportunityRequest.current = request;
@@ -428,12 +458,14 @@ export default function App({ eligibilityInput = null } = {}) {
       if (!isCurrent()) return;
       if (request.timedOut) throw new Error('timeout');
       const items = readOpportunities(data);
+      cancelEligibility();
       // A valid empty API list remains empty; it is not a connection failure.
       setOpportunities(items);
       setDatasetNote(Array.isArray(data) ? '' : data.dataset_note || '');
       setBackendDataSource('live-fastapi');
     } catch {
       if (!isCurrent()) return;
+      cancelEligibility();
       const messages = {
         network: 'Could not connect to the opportunity service. Check the connection and try again.',
         timeout: 'The opportunity service took too long to respond. Please try again.',
@@ -460,6 +492,8 @@ export default function App({ eligibilityInput = null } = {}) {
   useEffect(() => {
     fetchOpportunitiesFromBackend();
     return () => {
+      eligibilityRequest.current?.abort();
+      eligibilityRequest.current = null;
       const request = opportunityRequest.current;
       opportunityRequest.current = null;
       if (request) {
@@ -485,6 +519,7 @@ export default function App({ eligibilityInput = null } = {}) {
     }
 
     if (Object.keys(errors).length > 0) {
+      cancelEligibility();
       setFormErrors(errors);
       setProfileSubmitted(false);
       return;
@@ -492,6 +527,7 @@ export default function App({ eligibilityInput = null } = {}) {
 
     setFormErrors({});
     setProfileSubmitted(true);
+    evaluateProfile();
   };
 
   // ---------------------------------------------------------------------------
@@ -818,7 +854,7 @@ export default function App({ eligibilityInput = null } = {}) {
             </span>
           </div>
           <p className="section-description">
-            Define your cybersecurity aspirations and background. Only the career goal is required. Blank or not stated answers mean information is unavailable. Profile validation checks input format; eligibility evaluation belongs to the backend.
+            Define your cybersecurity aspirations and background. Only the career goal is required. Blank or not stated answers mean information is unavailable. Submitting validates input format and sends your profile, excluding your voluntary identity answer, to the backend to compare published conditions.
           </p>
 
           <form onSubmit={handleProfileSubmit} noValidate className="profile-form">
@@ -1017,12 +1053,13 @@ export default function App({ eligibilityInput = null } = {}) {
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
-                Validate Profile Inputs
+                Validate Profile Inputs &amp; Evaluate Conditions
               </button>
               <button
                 type="button"
                 className="btn btn-outline"
                 onClick={() => {
+                  cancelEligibility();
                   setProfile({ ...initialProfile, education_level: 'vocational', field_of_study: 'Information Technology', skills: ['networking', 'Linux', 'Wireshark'] });
                   setCareerGoal('Incident Responder / Digital Forensics');
                   setWeightedAverageInvalid(false);
@@ -1065,11 +1102,15 @@ export default function App({ eligibilityInput = null } = {}) {
             role={eligibility.warning ? 'alert' : 'status'} aria-label="Eligibility evaluation status">
             {eligibility.warning ? (
               <p>{eligibility.warning}</p>
+            ) : eligibility.state === 'loading' ? (
+              <p>Evaluating published conditions with the backend. Conditions remain Not yet evaluated until the responses are validated.</p>
             ) : eligibility.state === 'ready' && eligibility.results.size > 0 ? (
               <p>Validated backend condition results are shown for the current profile. They are condition outcomes, not a suitability score or an overall eligibility decision.</p>
             ) : (
               <p>Eligibility evaluation is unavailable or no backend results have been supplied. Conditions are Not yet evaluated. Published opportunity information remains available.</p>
             )}
+            {eligibility.notices?.map((notice) => <p key={notice}>{notice}</p>)}
+            <p>Comparisons are informational only. They do not represent an official eligibility or admission decision.</p>
             <p>Not yet evaluated means there is no accepted result. Uncertain is an explicit backend outcome requiring more information or review.</p>
           </aside>
 

@@ -1,6 +1,4 @@
-// Presentation only. No endpoint, transport, profile inference or eligibility rules.
-// Stefano's wire contract is not defined yet: an explicit decoder must convert it
-// to this INTERNAL list: { opportunityId, conditionId, status, explanation? }[].
+// Backend transport and presentation only; no profile inference or eligibility rules.
 export const ELIGIBILITY_STATES = Object.freeze({
   satisfied: { label: 'Satisfied', badgeClass: 'badge-satisfied' },
   unmet: { label: 'Unmet', badgeClass: 'badge-unmet' },
@@ -12,6 +10,92 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 const fields = ['opportunityId', 'conditionId', 'status', 'explanation'];
 const backendStatuses = ['satisfied', 'unmet', 'uncertain'];
 const identityReview = 'Student confirmation or human review is required. Identity is never automatically evaluated or scored.';
+
+// Decode only the agreed FastAPI envelope. Evidence is checked against the
+// published record, never used to replace it or to infer eligibility here.
+export function decodeEligibilityResponse(payload, opportunity) {
+  const envelopeFields = ['opportunity_id', 'results', 'notice'];
+  const resultFields = ['condition_id', 'status', 'explanation', 'requirement', 'evidence_summary', 'source_url'];
+  if (!isObject(payload) || Object.keys(payload).some((key) => !envelopeFields.includes(key)) ||
+      payload.opportunity_id !== opportunity.id || !Array.isArray(payload.results) ||
+      typeof payload.notice !== 'string' || !payload.notice.trim()) throw new Error('Invalid eligibility envelope.');
+  const seen = new Set();
+  return payload.results.map((result) => {
+    if (!isObject(result) || Object.keys(result).some((key) => !resultFields.includes(key)) ||
+        !backendStatuses.includes(result.status) || typeof result.explanation !== 'string') {
+      throw new Error('Invalid eligibility result.');
+    }
+    const condition = opportunity.eligibility_conditions.find((item) => item.id === result.condition_id);
+    if (!condition || seen.has(result.condition_id)) throw new Error('Invalid condition ID.');
+    seen.add(result.condition_id);
+    for (const [wire, published] of [['requirement', 'text'], ['evidence_summary', 'evidence_summary'], ['source_url', 'source_url']]) {
+      if (Object.hasOwn(result, wire) && result[wire] !== condition[published]) throw new Error('Invalid evidence.');
+    }
+    return { opportunityId: opportunity.id, conditionId: condition.id, status: result.status, explanation: result.explanation };
+  });
+}
+
+// One request per opportunity, with a fixed concurrency bound. No partial batch
+// is published. Abort/timeout races also settle transports that ignore abort.
+export async function evaluateOpportunities(profile, opportunities, { signal, fetchImpl = fetch } = {}) {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener('abort', cancel, { once: true });
+  if (signal?.aborted) cancel();
+  const safeProfile = Object.fromEntries(Object.entries(profile).filter(([key]) => key !== 'identity_answer'));
+  const batches = new Array(opportunities.length);
+  const notices = new Array(opportunities.length);
+  let next = 0;
+  try {
+    const worker = async () => {
+      while (next < opportunities.length) {
+        if (controller.signal.aborted) throw new Error('cancelled');
+        const index = next++;
+        const opportunity = opportunities[index];
+        const request = new AbortController();
+        let timer, onAbort;
+        const interrupted = new Promise((_, reject) => {
+          onAbort = () => { request.abort(); reject(new Error('cancelled')); };
+          controller.signal.addEventListener('abort', onAbort, { once: true });
+          timer = setTimeout(() => { request.abort(); reject(new Error('timeout')); }, 3500);
+        });
+        try {
+          const payload = await Promise.race([interrupted, (async () => {
+            const response = await fetchImpl('http://127.0.0.1:8000/api/eligibility/evaluate', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: request.signal,
+              body: JSON.stringify({ opportunity_id: opportunity.id, profile: safeProfile })
+            });
+            if (!response.ok) throw new Error('http');
+            return response.json();
+          })()]);
+          const batch = adaptEligibilityResults(payload, [opportunity], (body) => decodeEligibilityResponse(body, opportunity));
+          if (batch.state !== 'ready') throw new Error(batch.warning?.startsWith('Identity safeguard') ? 'identity' : 'invalid');
+          batches[index] = [...batch.results].map(([conditionId, row]) => ({ ...row, conditionId, explanation: row.explanation ?? '' }));
+          notices[index] = payload.notice;
+        } finally {
+          clearTimeout(timer);
+          controller.signal.removeEventListener('abort', onAbort);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(3, opportunities.length) }, worker));
+    if (controller.signal.aborted) throw new Error('cancelled');
+    const batch = adaptEligibilityResults(batches.flat(), opportunities, (rows) => rows);
+    return { ...batch, notices: [...new Set(notices)] };
+  } catch (error) {
+    controller.abort();
+    const messages = {
+      cancelled: 'Eligibility evaluation was cancelled. Submit the current profile to try again.',
+      timeout: 'Eligibility evaluation timed out. Please submit again to retry.',
+      http: 'The eligibility service returned an unsuccessful response. Please try again.',
+      invalid: 'Eligibility response rejected: invalid, unknown, duplicate or mismatched condition results.',
+      identity: 'Identity safeguard violation: automatic identity decisions were rejected. Student confirmation or human review is required.'
+    };
+    return emptyEligibility('unavailable', messages[error.message] || 'Could not connect to the eligibility service or read its response. Please try again.');
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+  }
+}
 
 export function emptyEligibility(state = 'unavailable', warning = null) {
   return { state, warning, results: new Map() };
