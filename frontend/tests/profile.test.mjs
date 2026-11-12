@@ -38,15 +38,62 @@ test('optional answers submit empty; editing and validation failures preserve da
   assert.match(ui.markup(), /Please specify your Cybersecurity Career Goal/);
   assert.equal(ui.profile().institution, 'Curtin University');
   ui.change('careerGoal', 'Incident Responder');
-  ui.change('weighted_average', '78.5', { valueAsNumber: 78.5, validity: { badInput: false } });
+  // Reject weighted averages outside the backend's permitted range.
+  for (const value of [-10, 100.1, 150]) {
+    ui.change('weighted_average', String(value), {
+      valueAsNumber: value,
+      validity: { badInput: false }
+    });
+
+    ui.submit();
+
+    assert.match(
+      ui.markup(),
+      /Enter a weighted average between 0 and 100/
+    );
+
+    assert.equal(
+      ui.byId('weighted_average').props['aria-invalid'],
+      true
+    );
+
+    assert.doesNotMatch(ui.markup(), /Profile inputs validated/);
+  }
+
+  // Accept valid weighted averages, including both boundaries.
+  for (const value of [0, 65, 78.5, 100]) {
+    ui.change('weighted_average', String(value), {
+      valueAsNumber: value,
+      validity: { badInput: false }
+    });
+
+    ui.submit();
+
+    assert.equal(ui.profile().weighted_average, value);
+    assert.match(ui.markup(), /Profile inputs validated/);
+  }
+
+  // Reject malformed numeric input.
+  ui.change('weighted_average', '', {
+    valueAsNumber: NaN,
+    validity: { badInput: true }
+  });
+
   ui.submit();
-  assert.equal(ui.profile().weighted_average, 78.5);
-  assert.match(ui.markup(), /Profile inputs validated/);
-  ui.change('weighted_average', '', { valueAsNumber: NaN, validity: { badInput: true } });
+
+  assert.match(
+    ui.markup(),
+    /Enter a weighted average between 0 and 100/
+  );
+
+  // A blank weighted average remains valid and optional.
+  ui.change('weighted_average', '', {
+    valueAsNumber: NaN,
+    validity: { badInput: false }
+  });
+
   ui.submit();
-  assert.match(ui.markup(), /Enter a valid finite number/);
-  ui.change('weighted_average', '', { valueAsNumber: NaN, validity: { badInput: false } });
-  ui.submit();
+
   assert.equal(ui.profile().weighted_average, null);
   assert.deepEqual(ui.profile().skills, []);
   assert.deepEqual(ui.profile().preferred_agencies, []);
