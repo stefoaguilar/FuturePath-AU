@@ -1606,6 +1606,26 @@ const [pathwayRequestState, setPathwayRequestState] = useState({
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"
+                          onClick={() =>
+                            generateBackendPathwayForOpportunity(opportunity)
+                          }
+                          disabled={
+                            !profileSubmitted ||
+                            isLoading ||
+                            Boolean(apiError) ||
+                            backendDataSource !== 'live-fastapi' ||
+                            pathwayRequestState.status === 'loading'
+                          }
+                        >
+                          {pathwayRequestState.status === 'loading' &&
+                          pathwayRequestState.opportunityId === opportunity.id
+                            ? 'Generating Draft...'
+                            : 'Generate Personalised Pathway (Live)'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
                           onClick={() => generatePathwayForOpportunity(opportunity)}
                           title="Generate a student-guided sequential milestone pathway for this opportunity"
                         >
@@ -2057,7 +2077,31 @@ const [pathwayRequestState, setPathwayRequestState] = useState({
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
-                  onClick={() => window.print()}
+                  
+onClick={() => {
+  const collapsedEvidence = Array.from(
+    document.querySelectorAll(
+      '#pathway-planner-section details.pathway-evidence'
+    )
+  ).filter((section) => !section.open);
+
+  collapsedEvidence.forEach((section) => {
+    section.open = true;
+  });
+
+  window.addEventListener(
+    'afterprint',
+    () => {
+      collapsedEvidence.forEach((section) => {
+        section.open = false;
+      });
+    },
+    { once: true }
+  );
+
+  window.print();
+}}
+
                   title="Print or export your approved pathway plan"
                 >
                   <IconPrinter size={15} /> Print / Export Pathway
