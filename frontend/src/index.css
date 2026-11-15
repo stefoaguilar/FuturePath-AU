@@ -1560,3 +1560,53 @@ body {
     padding: 14px;
   }
 }
+
+
+/* Print only the approved student pathway */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+  }
+
+  .app-container {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-header,
+  .app-container > .api-error-banner,
+  .app-footer,
+  .main-content > :not(#pathway-planner-section),
+  #pathway-planner-section .pathway-banner,
+  #pathway-planner-section .approved-summary-bar button {
+    display: none !important;
+  }
+
+  .main-content {
+    display: block !important;
+  }
+
+  #pathway-planner-section {
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  #pathway-planner-section .milestone-item {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #pathway-planner-section .milestone-content {
+    box-shadow: none !important;
+  }
+}
