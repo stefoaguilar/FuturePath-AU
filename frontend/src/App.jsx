@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import localOpportunityDataset from '../../data/opportunities.json';
 import { localCalendarDate, OPPORTUNITY_CATEGORIES, readOpportunities, evaluateDeadline, formatDate, displayValue } from './opportunityData.js';
 import { ELIGIBILITY_STATES, adaptEligibilityResults, emptyEligibility, evaluateOpportunities, matchesProfileSnapshot, presentCondition, summarizeConditions } from './eligibilityResults.js';
+import { requestGapAnalysis } from './gapAnalysis.js';
+import { requestDraftPathway } from './pathwayGeneration.js';
+import { toEditableMilestones } from './pathwayMilestones.js';
 
 /**
  * ==============================================================================
@@ -295,11 +298,110 @@ export default function App({ eligibilityInput = null } = {}) {
   const opportunityRequest = useRef(null);
   const eligibilityRequest = useRef(null);
   const [runtimeEligibility, setRuntimeEligibility] = useState(null);
+
+const gapRequest = useRef(null);
+
+const [runtimeGapAnalysis, setRuntimeGapAnalysis] = useState({
+  status: 'idle',
+  opportunityId: null,
+  data: null,
+  error: null
+});
+  
+const cancelGapAnalysis = () => {
+    gapRequest.current?.abort();
+    gapRequest.current = null;
+    setRuntimeGapAnalysis({
+      status: 'idle',
+      opportunityId: null,
+      data: null,
+      error: null
+    });
+  };
+
   const cancelEligibility = () => {
     eligibilityRequest.current?.abort();
     eligibilityRequest.current = null;
     setRuntimeEligibility(null);
+    cancelGapAnalysis();
   };
+
+  const analyseSelectedOpportunity = async (opportunity) => {
+    cancelGapAnalysis();
+
+    if (!profileSubmitted) {
+      setRuntimeGapAnalysis({
+        status: 'unavailable',
+        opportunityId: opportunity.id,
+        data: null,
+        error: 'Validate your profile before analysing gaps.'
+      });
+      return;
+    }
+
+    if (
+      isLoading ||
+      opportunityRequest.current ||
+      apiError ||
+      backendDataSource !== 'live-fastapi'
+    ) {
+      setRuntimeGapAnalysis({
+        status: 'unavailable',
+        opportunityId: opportunity.id,
+        data: null,
+        error: 'Live gap analysis requires a connected backend.'
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    gapRequest.current = controller;
+
+    setRuntimeGapAnalysis({
+      status: 'loading',
+      opportunityId: opportunity.id,
+      data: null,
+      error: null
+    });
+
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    try {
+      const data = await requestGapAnalysis(
+        opportunity,
+        activeUserProfile,
+        { signal: controller.signal }
+      );
+
+      if (
+        gapRequest.current !== controller ||
+        controller.signal.aborted
+      ) return;
+
+      setRuntimeGapAnalysis({
+        status: 'ready',
+        opportunityId: opportunity.id,
+        data,
+        error: null
+      });
+    } catch {
+      if (gapRequest.current !== controller) return;
+
+      setRuntimeGapAnalysis({
+        status: 'unavailable',
+        opportunityId: opportunity.id,
+        data: null,
+        error: 'Gap analysis is unavailable. Published requirements remain available.'
+      });
+    } finally {
+      clearTimeout(timeoutId);
+
+      if (gapRequest.current === controller) {
+        gapRequest.current = null;
+      }
+    }
+  };
+
   const evaluateSelectedOpportunity = async (opportunity) => {
     cancelEligibility();
 
@@ -429,6 +531,14 @@ export default function App({ eligibilityInput = null } = {}) {
   // Synchronous lock and plan version protect against handlers from older renders,
   // including the interval before React commits approval or replacement state.
   const pathwayGuard = useRef({ approved: false, version: 0, editingId: null, nextCustomId: 0 });
+
+const pathwayRequest = useRef(null);
+
+const [pathwayRequestState, setPathwayRequestState] = useState({
+  status: 'idle',
+  opportunityId: null,
+  error: null
+});
   const pathwayVersion = pathwayGuard.current.version;
   const canEditPathway = () => !pathwayGuard.current.approved && pathwayGuard.current.version === pathwayVersion;
   const resetPathwayForms = () => {
@@ -523,6 +633,8 @@ export default function App({ eligibilityInput = null } = {}) {
     return () => {
       eligibilityRequest.current?.abort();
       eligibilityRequest.current = null;
+      gapRequest.current?.abort();
+      gapRequest.current = null;
       const request = opportunityRequest.current;
       opportunityRequest.current = null;
       if (request) {
@@ -667,7 +779,116 @@ export default function App({ eligibilityInput = null } = {}) {
     }
   };
 
+
+  // Generate an editable pathway from the validated FastAPI response.
+  const generateBackendPathwayForOpportunity = async (opportunity) => {
+    if (
+      !profileSubmitted ||
+      isLoading ||
+      opportunityRequest.current ||
+      apiError ||
+      backendDataSource !== 'live-fastapi'
+    ) {
+      setPathwayRequestState({
+        status: 'unavailable',
+        opportunityId: opportunity.id,
+        error: 'Validate your profile and connect to FastAPI before generating a live pathway.'
+      });
+      return;
+    }
+
+    // Ask before replacing an already approved student pathway.
+    if (pathwayGuard.current.approved) {
+      const confirmed = window.confirm(
+        'Your current pathway is approved and locked.\n\n' +
+        'Generating a new pathway will replace it with an unapproved draft. ' +
+        'Your current plan will remain unchanged if generation fails.\n\n' +
+        'Continue?'
+      );
+      if (!confirmed) return;
+    }
+
+    // A newer generation request supersedes the previous one.
+    pathwayRequest.current?.abort();
+
+    const controller = new AbortController();
+    pathwayRequest.current = controller;
+
+    const startingVersion = pathwayGuard.current.version;
+    const startingApproval = pathwayGuard.current.approved;
+
+    setPathwayRequestState({
+      status: 'loading',
+      opportunityId: opportunity.id,
+      error: null
+    });
+
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    try {
+      const draft = await requestDraftPathway(
+        opportunity,
+        activeUserProfile,
+        { signal: controller.signal }
+      );
+
+      // Never accept a cancelled, superseded or stale response.
+      if (
+        pathwayRequest.current !== controller ||
+        controller.signal.aborted ||
+        pathwayGuard.current.version !== startingVersion ||
+        pathwayGuard.current.approved !== startingApproval
+      ) {
+        return;
+      }
+
+      const nextVersion = startingVersion + 1;
+      const milestones = toEditableMilestones(
+        opportunity,
+        draft,
+        nextVersion
+      );
+
+      // Replace the plan only after successful validation.
+      pathwayGuard.current.version = nextVersion;
+      pathwayGuard.current.approved = false;
+
+      setIsPathwayApproved(false);
+      setApprovedTimestamp(null);
+      resetPathwayForms();
+
+      setSelectedOpportunityForPathway(opportunity);
+      setPathwayMilestones(milestones);
+
+      setPathwayRequestState({
+        status: 'ready',
+        opportunityId: opportunity.id,
+        error: null
+      });
+
+      document.getElementById('pathway-planner-section')
+        ?.scrollIntoView({ behavior: 'smooth' });
+
+    } catch {
+      if (pathwayRequest.current !== controller) return;
+
+      setPathwayRequestState({
+        status: 'unavailable',
+        opportunityId: opportunity.id,
+        error: 'Live pathway generation failed. Your existing pathway has been preserved.'
+      });
+
+    } finally {
+      clearTimeout(timeoutId);
+
+      if (pathwayRequest.current === controller) {
+        pathwayRequest.current = null;
+      }
+    }
+  };
+
   // Move by stable ID using current state, rather than a captured array/index.
+
   const moveStep = (id, direction) => {
     if (!canEditPathway()) return;
     setPathwayMilestones((prev) => {
@@ -1366,6 +1587,22 @@ export default function App({ eligibilityInput = null } = {}) {
                           Evaluate Eligibility Conditions
                         </button>
 
+
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => analyseSelectedOpportunity(opportunity)}
+                          disabled={
+                            !profileSubmitted ||
+                            isLoading ||
+                            backendDataSource !== 'live-fastapi' ||
+                            (runtimeGapAnalysis.status === 'loading' &&
+                              runtimeGapAnalysis.opportunityId === opportunity.id)
+                          }
+                        >
+                          Analyse Prerequisite Gaps
+                        </button>
+
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"
@@ -1375,6 +1612,79 @@ export default function App({ eligibilityInput = null } = {}) {
                           Plan Pathway for this Opportunity &rarr;
                         </button>
                       </div>
+
+                      {runtimeGapAnalysis.opportunityId === opportunity.id && (
+                        <div
+                          className="eligibility-breakdown"
+                          role="region"
+                          aria-label={`Gap analysis for ${opportunity.id}`}
+                          data-gap-analysis={opportunity.id}
+                        >
+                          <h4>Profile-Specific Prerequisite Gap Analysis</h4>
+
+                          {runtimeGapAnalysis.status === 'loading' && (
+                            <p role="status">Analysing published requirements...</p>
+                          )}
+
+                          {runtimeGapAnalysis.status === 'unavailable' && (
+                            <p role="alert">{runtimeGapAnalysis.error}</p>
+                          )}
+
+                          {runtimeGapAnalysis.status === 'ready' &&
+                            runtimeGapAnalysis.data && (
+                              <>
+                                <h5>Confirmed Unmet Requirements</h5>
+                                {runtimeGapAnalysis.data.confirmed_unmet_requirements.length === 0 ? (
+                                  <p>No confirmed unmet requirements were identified. This does not establish eligibility.</p>
+                                ) : (
+                                  <ul>
+                                    {runtimeGapAnalysis.data.confirmed_unmet_requirements.map((item) => (
+                                      <li key={item.condition_id}>
+                                        <strong>{item.requirement}</strong>
+                                        <p>{item.explanation}</p>
+                                        <p>Evidence: {item.evidence_summary}</p>
+                                        <a href={item.source_url} target="_blank" rel="noopener noreferrer">
+                                          Published source
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+
+                                <h5>Requirements Needing Review</h5>
+                                {runtimeGapAnalysis.data.requirements_needing_review.length === 0 ? (
+                                  <p>No additional requirements were flagged for review.</p>
+                                ) : (
+                                  <ul>
+                                    {runtimeGapAnalysis.data.requirements_needing_review.map((item) => (
+                                      <li key={item.condition_id}>
+                                        <strong>{item.requirement}</strong>
+                                        <p>{item.explanation}</p>
+                                        <a href={item.source_url} target="_blank" rel="noopener noreferrer">
+                                          Published source
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+
+                                <h5>Skills to Explore</h5>
+                                {runtimeGapAnalysis.data.skills_to_explore.length === 0 ? (
+                                  <p>No additional skill areas identified.</p>
+                                ) : (
+                                  <ul>
+                                    {runtimeGapAnalysis.data.skills_to_explore.map((skill) => (
+                                      <li key={skill}>{skill}</li>
+                                    ))}
+                                  </ul>
+                                )}
+
+                                <p><strong>Important:</strong> {runtimeGapAnalysis.data.notice}</p>
+                              </>
+                            )}
+                        </div>
+                      )}
+
                     </div>
                   </article>
                 );
